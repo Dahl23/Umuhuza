@@ -206,6 +206,21 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 # EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
+# SMS settings - Africa's Talking
+# For development, SMS are logged to console
+# For production, configure Africa's Talking credentials
+AFRICAS_TALKING_USERNAME = os.environ.get('AFRICAS_TALKING_USERNAME', '')
+AFRICAS_TALKING_API_KEY = os.environ.get('AFRICAS_TALKING_API_KEY', '')
+AFRICAS_TALKING_SENDER_ID = os.environ.get('AFRICAS_TALKING_SENDER_ID', 'UMUHUZA')
+
+# To enable SMS in production:
+# 1. Sign up at https://africastalking.com
+# 2. Get your API credentials
+# 3. Set environment variables:
+#    - AFRICAS_TALKING_USERNAME=your_username
+#    - AFRICAS_TALKING_API_KEY=your_api_key
+#    - AFRICAS_TALKING_SENDER_ID=UMUHUZA (optional)
+
 # Celery settings (we'll configure later)
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'

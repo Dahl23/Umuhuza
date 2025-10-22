@@ -67,6 +67,111 @@ def revoke_badge(user, badge_type):
 
 
 # ============================================================================
+# SMS UTILITIES
+# ============================================================================
+
+def send_sms(phone_number, message):
+    """
+    Send SMS using Africa's Talking API
+
+    For development, SMS content is printed to console.
+    For production, configure Africa's Talking credentials.
+    """
+    # Development mode - print to console
+    if settings.DEBUG or not hasattr(settings, 'AFRICAS_TALKING_USERNAME'):
+        print(f"\n{'='*60}")
+        print(f"📱 SMS MESSAGE")
+        print(f"{'='*60}")
+        print(f"To: {phone_number}")
+        print(f"Message: {message}")
+        print(f"{'='*60}\n")
+        return True
+
+    # Production mode - use Africa's Talking
+    try:
+        import africastalking
+
+        # Initialize SDK
+        africastalking.initialize(
+            username=settings.AFRICAS_TALKING_USERNAME,
+            api_key=settings.AFRICAS_TALKING_API_KEY
+        )
+
+        # Get SMS service
+        sms = africastalking.SMS
+
+        # Send SMS
+        response = sms.send(
+            message=message,
+            recipients=[phone_number],
+            sender_id=getattr(settings, 'AFRICAS_TALKING_SENDER_ID', None)
+        )
+
+        return True
+    except Exception as e:
+        print(f"Error sending SMS: {str(e)}")
+        return False
+
+
+def send_phone_verification_sms(user, code):
+    """
+    Send phone verification code via SMS
+    """
+    message = f"""Umuhuza Verification Code: {code}
+
+This code will expire in 10 minutes.
+
+Never share this code with anyone.
+
+- Umuhuza Team"""
+
+    return send_sms(user.phone_number, message)
+
+
+def send_welcome_sms(user):
+    """
+    Send welcome SMS to new user
+    """
+    message = f"""Welcome to Umuhuza, {user.user_firstname}!
+
+Your account has been created successfully. Start buying and selling today!
+
+Visit: umuhuza.bi
+
+- Umuhuza Team"""
+
+    return send_sms(user.phone_number, message)
+
+
+def send_password_reset_sms(user, code):
+    """
+    Send password reset code via SMS
+    """
+    message = f"""Umuhuza Password Reset Code: {code}
+
+This code will expire in 10 minutes.
+
+If you didn't request this, please ignore.
+
+- Umuhuza Team"""
+
+    return send_sms(user.phone_number, message)
+
+
+def send_message_notification_sms(recipient, sender_name):
+    """
+    Notify user of new message via SMS
+    """
+    message = f"""New message from {sender_name} on Umuhuza!
+
+Login to view and reply: umuhuza.bi/messages
+
+- Umuhuza Team"""
+
+    return send_sms(recipient.phone_number, message)
+
+
+# ============================================================================
 # EMAIL UTILITIES
 # ============================================================================
 
