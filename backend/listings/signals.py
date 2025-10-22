@@ -8,8 +8,8 @@ def set_user_as_seller(sender, instance, created, **kwargs):
     """
     Automatically set is_seller flag when user creates their first listing
     """
-    if created and instance.sellerid:
-        user = instance.sellerid
+    if created and instance.userid:
+        user = instance.userid
         if not user.is_seller:
             user.is_seller = True
             # Update legacy role field if still 'buyer'
