@@ -7,6 +7,8 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import ListingCard from '../components/listings/ListingCard';
 import ReportModal from '../components/common/ReportModal';
+import ReviewsList from '../components/reviews/ReviewsList';
+import ReviewForm from '../components/reviews/ReviewForm';
 import { useRequireVerification } from '../hooks/useRequireVerification';
 import { 
   MapPin, Eye, Heart, Share2, Flag, MessageCircle, 
@@ -363,6 +365,23 @@ export default function ListingDetailPage() {
                   <li>• Report suspicious listings</li>
                 </ul>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Seller Reviews Section */}
+        <div className="mt-16">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <ReviewsList userId={listing.seller.userid} />
+            </div>
+            <div className="lg:col-span-1">
+              {!isOwner && isAuthenticated && (
+                <ReviewForm
+                  reviewedUserId={listing.seller.userid}
+                  listingId={Number(id)}
+                />
+              )}
             </div>
           </div>
         </div>

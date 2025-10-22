@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import Layout from '../components/layout/Layout';
 import Button from '../components/common/Button';
-import { 
+import ReviewsList from '../components/reviews/ReviewsList';
+import {
   Mail, Phone, Calendar, Shield, Edit, LogOut,
   CheckCircle, XCircle,
   Heart
@@ -124,6 +125,11 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* My Reviews */}
+        <div className="mb-6">
+          <ReviewsList userId={user.userid} />
+        </div>
 
         {/* Verification Status */}
         {!user.is_verified && (
