@@ -76,12 +76,10 @@ def register_view(request):
             expires_at=timezone.now() + timedelta(minutes=10)
         )
         
-        # Send verification codes
-        from .utils import send_phone_verification_sms
-        send_phone_verification_sms(user, phone_code)
-
-        # Email sending will be implemented later
+        # TODO: Send email with email_code
+        # TODO: Send SMS with phone_code
         print(f"📧 Email verification code for {user.email}: {email_code}")
+        print(f"📱 Phone verification code for {user.phone_number}: {phone_code}")
         
         # Generate tokens
         tokens = get_tokens_for_user(user)
@@ -321,18 +319,12 @@ def resend_code_view(request):
         expires_at=timezone.now() + timedelta(minutes=expires_minutes)
     )
     
-    # Send verification code
-    from .utils import send_phone_verification_sms
-
-    if code_type == 'phone':
-        send_phone_verification_sms(request.user, new_code)
-    else:
-        # Email sending will be implemented later
-        print(f"📧 Email verification code for {request.user.email}: {new_code}")
-
+    # TODO: Send email or SMS
+    print(f"New {code_type} code: {new_code}")
+    
     return Response({
         'message': f'Verification code sent to your {code_type}',
-        'code': new_code if settings.DEBUG else None  # Only include in DEBUG mode
+        'code': new_code  # Remove in production
     }, status=status.HTTP_200_OK)
 
 

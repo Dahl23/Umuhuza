@@ -115,25 +115,3 @@ export interface ReportCreateData {
   report_type: 'spam' | 'fraud' | 'inappropriate' | 'duplicate' | 'harassment' | 'other';
   report_reason: string;
 }
-
-export interface Review {
-  ratingrev_id: number;
-  reviewer: User;
-  rating: number;
-  comment?: string;
-  createdat: string;
-  updatedat: string;
-}
-
-export interface ReviewCreateData {
-  reviewed_userid: number;
-  listing_id?: number;
-  rating: number;
-  comment?: string;
-}
-
-export interface ReviewsResponse {
-  average_rating: number;
-  total_reviews: number;
-  reviews: Review[];
-}

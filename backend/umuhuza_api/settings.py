@@ -193,33 +193,8 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Email settings
+# Email settings (we'll configure later)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
-DEFAULT_FROM_EMAIL = 'noreply@umuhuza.bi'
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
-
-# For production, use SMTP:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-# EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-
-# SMS settings - Africa's Talking
-# For development, SMS are logged to console
-# For production, configure Africa's Talking credentials
-AFRICAS_TALKING_USERNAME = os.environ.get('AFRICAS_TALKING_USERNAME', '')
-AFRICAS_TALKING_API_KEY = os.environ.get('AFRICAS_TALKING_API_KEY', '')
-AFRICAS_TALKING_SENDER_ID = os.environ.get('AFRICAS_TALKING_SENDER_ID', 'UMUHUZA')
-
-# To enable SMS in production:
-# 1. Sign up at https://africastalking.com
-# 2. Get your API credentials
-# 3. Set environment variables:
-#    - AFRICAS_TALKING_USERNAME=your_username
-#    - AFRICAS_TALKING_API_KEY=your_api_key
-#    - AFRICAS_TALKING_SENDER_ID=UMUHUZA (optional)
 
 # Celery settings (we'll configure later)
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
