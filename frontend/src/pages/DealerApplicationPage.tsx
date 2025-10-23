@@ -9,6 +9,9 @@ import { Building2, ArrowLeft, CheckCircle, XCircle, Clock } from 'lucide-react'
 import Layout from '../components/layout/Layout';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import StepIndicator, { Step } from '../components/common/StepIndicator';
+import FormStep from '../components/common/FormStep';
+import { useMultiStepForm } from '../hooks/useMultiStepForm';
 import { dealerApplicationsApi } from '../api/dealerApplications';
 import type { DealerApplicationCreateData } from '../types';
 
@@ -22,9 +25,39 @@ const schema = yup.object({
   business_license: yup.string(),
 });
 
+const steps: Step[] = [
+  {
+    number: 1,
+    label: 'Business Info',
+    description: 'Basic business details'
+  },
+  {
+    number: 2,
+    label: 'Contact Details',
+    description: 'Address and contact'
+  },
+  {
+    number: 3,
+    label: 'Legal Info',
+    description: 'Tax ID and license'
+  }
+];
+
 export default function DealerApplicationPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+
+  // Multi-step form
+  const {
+    currentStep,
+    completedSteps,
+    nextStep,
+    previousStep,
+    isFirstStep,
+    isLastStep
+  } = useMultiStepForm({
+    totalSteps: 3
+  });
 
   // Check existing application status
   const { data: applicationStatus, isLoading: loadingStatus } = useQuery({
@@ -32,8 +65,9 @@ export default function DealerApplicationPage() {
     queryFn: dealerApplicationsApi.getStatus,
   });
 
-  const { register, handleSubmit, formState: { errors } } = useForm<DealerApplicationCreateData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<DealerApplicationCreateData>({
     resolver: yupResolver(schema),
+    mode: 'onChange'
   });
 
   const submitMutation = useMutation({
@@ -52,6 +86,30 @@ export default function DealerApplicationPage() {
   const onSubmit = (data: DealerApplicationCreateData) => {
     setSubmitting(true);
     submitMutation.mutate(data);
+  };
+
+  // Validation for each step
+  const validateStep = (step: number): boolean => {
+    const values = watch();
+
+    switch (step) {
+      case 1: // Business Info
+        return !!(values.business_name && values.business_type) &&
+               !errors.business_name && !errors.business_type;
+      case 2: // Contact Details
+        return !!(values.business_address) &&
+               !errors.business_address && !errors.business_phone && !errors.business_email;
+      case 3: // Legal Info (all optional)
+        return !errors.tax_id && !errors.business_license;
+      default:
+        return false;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      nextStep();
+    }
   };
 
   // If loading status
@@ -193,140 +251,176 @@ export default function DealerApplicationPage() {
             </ul>
           </div>
 
+          {/* Step Indicator */}
+          <StepIndicator
+            steps={steps}
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+          />
+
           {/* Application Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Business Name */}
-            <div>
-              <label htmlFor="business_name" className="block text-sm font-medium text-gray-700 mb-2">
-                Business Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register('business_name')}
-                type="text"
-                id="business_name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="e.g., Premium Real Estate Ltd"
-              />
-              {errors.business_name && (
-                <p className="mt-1 text-sm text-red-600">{errors.business_name.message}</p>
-              )}
-            </div>
-
-            {/* Business Type */}
-            <div>
-              <label htmlFor="business_type" className="block text-sm font-medium text-gray-700 mb-2">
-                Business Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                {...register('business_type')}
-                id="business_type"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          <form onSubmit={handleSubmit(onSubmit)}>
+            {/* Step 1: Business Information */}
+            {currentStep === 1 && (
+              <FormStep
+                title="Business Information"
+                description="Tell us about your business"
+                onNext={handleNextStep}
+                isFirstStep={isFirstStep}
+                isLastStep={isLastStep}
+                isValid={validateStep(1)}
               >
-                <option value="">Select business type</option>
-                <option value="real_estate">Real Estate</option>
-                <option value="vehicle">Vehicle</option>
-                <option value="both">Both</option>
-              </select>
-              {errors.business_type && (
-                <p className="mt-1 text-sm text-red-600">{errors.business_type.message}</p>
-              )}
-            </div>
+                {/* Business Name */}
+                <div>
+                  <label htmlFor="business_name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register('business_name')}
+                    type="text"
+                    id="business_name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="e.g., Premium Real Estate Ltd"
+                  />
+                  {errors.business_name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.business_name.message}</p>
+                  )}
+                </div>
 
-            {/* Business Address */}
-            <div>
-              <label htmlFor="business_address" className="block text-sm font-medium text-gray-700 mb-2">
-                Business Address <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                {...register('business_address')}
-                id="business_address"
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Full business address including city and province"
-              />
-              {errors.business_address && (
-                <p className="mt-1 text-sm text-red-600">{errors.business_address.message}</p>
-              )}
-            </div>
+                {/* Business Type */}
+                <div>
+                  <label htmlFor="business_type" className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    {...register('business_type')}
+                    id="business_type"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select business type</option>
+                    <option value="real_estate">Real Estate</option>
+                    <option value="vehicle">Vehicle</option>
+                    <option value="both">Both</option>
+                  </select>
+                  {errors.business_type && (
+                    <p className="mt-1 text-sm text-red-600">{errors.business_type.message}</p>
+                  )}
+                </div>
+              </FormStep>
+            )}
 
-            {/* Business Phone */}
-            <div>
-              <label htmlFor="business_phone" className="block text-sm font-medium text-gray-700 mb-2">
-                Business Phone
-              </label>
-              <input
-                {...register('business_phone')}
-                type="tel"
-                id="business_phone"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="+257 79 123 456"
-              />
-              {errors.business_phone && (
-                <p className="mt-1 text-sm text-red-600">{errors.business_phone.message}</p>
-              )}
-            </div>
+            {/* Step 2: Contact Details */}
+            {currentStep === 2 && (
+              <FormStep
+                title="Contact Details"
+                description="How can customers reach you?"
+                onBack={previousStep}
+                onNext={handleNextStep}
+                isFirstStep={isFirstStep}
+                isLastStep={isLastStep}
+                isValid={validateStep(2)}
+              >
+                {/* Business Address */}
+                <div>
+                  <label htmlFor="business_address" className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Address <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    {...register('business_address')}
+                    id="business_address"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Full business address including city and province"
+                  />
+                  {errors.business_address && (
+                    <p className="mt-1 text-sm text-red-600">{errors.business_address.message}</p>
+                  )}
+                </div>
 
-            {/* Business Email */}
-            <div>
-              <label htmlFor="business_email" className="block text-sm font-medium text-gray-700 mb-2">
-                Business Email
-              </label>
-              <input
-                {...register('business_email')}
-                type="email"
-                id="business_email"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="contact@yourbusiness.bi"
-              />
-              {errors.business_email && (
-                <p className="mt-1 text-sm text-red-600">{errors.business_email.message}</p>
-              )}
-            </div>
+                {/* Business Phone */}
+                <div>
+                  <label htmlFor="business_phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Phone
+                  </label>
+                  <input
+                    {...register('business_phone')}
+                    type="tel"
+                    id="business_phone"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="+257 79 123 456"
+                  />
+                  {errors.business_phone && (
+                    <p className="mt-1 text-sm text-red-600">{errors.business_phone.message}</p>
+                  )}
+                </div>
 
-            {/* Tax ID */}
-            <div>
-              <label htmlFor="tax_id" className="block text-sm font-medium text-gray-700 mb-2">
-                Tax ID / TIN (Optional)
-              </label>
-              <input
-                {...register('tax_id')}
-                type="text"
-                id="tax_id"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="TIN123456789"
-              />
-            </div>
+                {/* Business Email */}
+                <div>
+                  <label htmlFor="business_email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Email
+                  </label>
+                  <input
+                    {...register('business_email')}
+                    type="email"
+                    id="business_email"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="contact@yourbusiness.bi"
+                  />
+                  {errors.business_email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.business_email.message}</p>
+                  )}
+                </div>
+              </FormStep>
+            )}
 
-            {/* Business License */}
-            <div>
-              <label htmlFor="business_license" className="block text-sm font-medium text-gray-700 mb-2">
-                Business License Number (Optional)
-              </label>
-              <input
-                {...register('business_license')}
-                type="text"
-                id="business_license"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="BL123456"
-              />
-            </div>
+            {/* Step 3: Legal Information */}
+            {currentStep === 3 && (
+              <FormStep
+                title="Legal Information"
+                description="Optional: Provide your business credentials"
+                onBack={previousStep}
+                isFirstStep={isFirstStep}
+                isLastStep={isLastStep}
+                isValid={validateStep(3)}
+                isSubmitting={submitting}
+              >
+                {/* Tax ID */}
+                <div>
+                  <label htmlFor="tax_id" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tax ID / TIN (Optional)
+                  </label>
+                  <input
+                    {...register('tax_id')}
+                    type="text"
+                    id="tax_id"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="TIN123456789"
+                  />
+                </div>
 
-            {/* Terms */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-700">
-                By submitting this application, you agree to our dealer terms and conditions.
-                We will review your application within 2-3 business days and notify you via email.
-              </p>
-            </div>
+                {/* Business License */}
+                <div>
+                  <label htmlFor="business_license" className="block text-sm font-medium text-gray-700 mb-2">
+                    Business License Number (Optional)
+                  </label>
+                  <input
+                    {...register('business_license')}
+                    type="text"
+                    id="business_license"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="BL123456"
+                  />
+                </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              fullWidth
-              disabled={submitting}
-            >
-              {submitting ? 'Submitting...' : 'Submit Application'}
-            </Button>
+                {/* Terms */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-700">
+                    By submitting this application, you agree to our dealer terms and conditions.
+                    We will review your application within 2-3 business days and notify you via email.
+                  </p>
+                </div>
+              </FormStep>
+            )}
           </form>
         </div>
       </div>
