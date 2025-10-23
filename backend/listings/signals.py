@@ -11,8 +11,9 @@ def set_user_as_seller(sender, instance, created, **kwargs):
     """
     if created and instance.userid:
         user = instance.userid
-
-        # If user is currently a buyer, promote them to seller
-        if user.user_role == 'buyer':
-            user.user_role = 'seller'
-            user.save(update_fields=['user_role'])
+        if not user.is_seller:
+            user.is_seller = True
+            # Update legacy role field if still 'buyer'
+            if user.user_role == 'buyer':
+                user.user_role = 'seller'
+            user.save(update_fields=['is_seller', 'user_role'])
