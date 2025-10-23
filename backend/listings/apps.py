@@ -6,4 +6,4 @@ class ListingsConfig(AppConfig):
     name = 'listings'
 
     def ready(self):
-        import listings.signals  # noqa
+        import listings.signals
