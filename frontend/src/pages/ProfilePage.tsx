@@ -6,7 +6,7 @@ import ReviewsList from '../components/reviews/ReviewsList';
 import {
   Mail, Phone, Calendar, Shield, Edit, LogOut,
   CheckCircle, XCircle,
-  Heart
+  Heart, Building2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -163,6 +163,23 @@ export default function ProfilePage() {
             <Heart className="w-4 h-4" />
             My Favorites
           </Button>
+          <Button
+            variant="outline"
+            fullWidth
+            onClick={() => navigate('/payments/history')}
+          >
+            Payment History
+          </Button>
+          {user.user_role !== 'dealer' && (
+            <Button
+              fullWidth
+              onClick={() => navigate('/become-dealer')}
+              className="bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700"
+            >
+              <Building2 className="w-4 h-4" />
+              Become a Dealer
+            </Button>
+          )}
           <Button
             variant="danger"
             fullWidth

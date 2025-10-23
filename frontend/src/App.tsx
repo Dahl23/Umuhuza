@@ -15,6 +15,9 @@ import ProfilePage from "./pages/ProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
 import MessagesPage from "./pages/MessagesPage";
 import EditListingPage from "./pages/EditListingPage";
+import PaymentVerifyPage from "./pages/PaymentVerifyPage";
+import PaymentHistoryPage from "./pages/PaymentHistoryPage";
+import DealerApplicationPage from "./pages/DealerApplicationPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -92,6 +95,34 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditListingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Payment Routes */}
+          <Route
+            path="/payment/verify"
+            element={
+              <ProtectedRoute>
+                <PaymentVerifyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments/history"
+            element={
+              <ProtectedRoute>
+                <PaymentHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Dealer Application */}
+          <Route
+            path="/become-dealer"
+            element={
+              <ProtectedRoute>
+                <DealerApplicationPage />
               </ProtectedRoute>
             }
           />

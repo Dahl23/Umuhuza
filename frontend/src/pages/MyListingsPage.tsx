@@ -5,17 +5,20 @@ import { listingsApi } from '../api/listings';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
-import { 
+import {
   Plus, Edit, Trash2, Eye, MapPin, Calendar, TrendingUp,
-  Package, CheckCircle, Clock, XCircle
+  Package, CheckCircle, Clock, XCircle, Star
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import PaymentModal from '../components/payments/PaymentModal';
 
 export default function MyListingsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState<number | null>(null);
 
   // Fetch user's listings
   const { data: listings, isLoading } = useQuery({
@@ -272,6 +275,19 @@ export default function MyListingsPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
+                          {!listing.is_featured && listing.listing_status === 'active' && (
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedListingId(listing.listing_id);
+                                setPaymentModalOpen(true);
+                              }}
+                              title="Promote to Featured"
+                              className="border-primary-300 text-primary-700 hover:bg-primary-50"
+                            >
+                              <Star className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             onClick={() => handleDelete(listing.listing_id, listing.listing_title)}
@@ -289,6 +305,16 @@ export default function MyListingsPage() {
             })}
           </div>
         )}
+
+        {/* Payment Modal */}
+        <PaymentModal
+          isOpen={paymentModalOpen}
+          onClose={() => {
+            setPaymentModalOpen(false);
+            setSelectedListingId(null);
+          }}
+          listingId={selectedListingId || undefined}
+        />
       </div>
     </Layout>
   );

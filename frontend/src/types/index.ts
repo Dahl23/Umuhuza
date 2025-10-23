@@ -137,3 +137,81 @@ export interface ReviewsResponse {
   total_reviews: number;
   reviews: Review[];
 }
+
+// Payment & Pricing Types
+export interface PricingPlan {
+  pricing_id: number;
+  pricing_name: string;
+  pricing_description: string;
+  plan_price: string;
+  duration_days: number;
+  category_scope: 'all' | 'real_estate' | 'vehicle';
+  max_listings: number;
+  max_images_per_listing: number;
+  is_featured: boolean;
+  is_active: boolean;
+  createdat: string;
+  updatedat: string;
+}
+
+export interface Payment {
+  payment_id: string;
+  userid: number;
+  pricing_id: PricingPlan;
+  listing_id?: number;
+  payment_amount: string;
+  payment_method: 'mobile_money' | 'card' | 'wallet';
+  payment_status: 'pending' | 'successful' | 'failed' | 'refunded';
+  payment_ref: string;
+  transaction_id?: string;
+  failure_reason?: string;
+  createdat: string;
+  confirmed_at?: string;
+}
+
+export interface PaymentInitiateData {
+  pricing_id: number;
+  listing_id?: number;
+  payment_method: 'mobile_money' | 'card' | 'wallet';
+  phone_number?: string;
+}
+
+export interface PaymentInitiateResponse {
+  payment_id: string;
+  payment_ref: string;
+  amount: number;
+  message: string;
+  status: string;
+}
+
+export interface PaymentVerifyData {
+  payment_ref: string;
+}
+
+// Dealer Application Types
+export interface DealerApplication {
+  dealerapp_id: number;
+  userid: number;
+  business_name: string;
+  business_type: 'real_estate' | 'vehicle' | 'both';
+  business_address: string;
+  business_phone?: string;
+  business_email?: string;
+  tax_id?: string;
+  business_license?: string;
+  appli_status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
+  createdat: string;
+  approvedat?: string;
+  updatedat: string;
+}
+
+export interface DealerApplicationCreateData {
+  business_name: string;
+  business_type: 'real_estate' | 'vehicle' | 'both';
+  business_address: string;
+  business_phone?: string;
+  business_email?: string;
+  tax_id?: string;
+  business_license?: string;
+}
