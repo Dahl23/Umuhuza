@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from '@tantml:react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -9,7 +9,7 @@ import { Building2, ArrowLeft, CheckCircle, XCircle, Clock } from 'lucide-react'
 import Layout from '../components/layout/Layout';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import StepIndicator, { Step } from '../components/common/StepIndicator';
+import StepIndicator, { type Step } from '../components/common/StepIndicator';
 import FormStep from '../components/common/FormStep';
 import { useMultiStepForm } from '../hooks/useMultiStepForm';
 import { dealerApplicationsApi } from '../api/dealerApplications';
