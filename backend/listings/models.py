@@ -59,6 +59,73 @@ class PricingPlan(models.Model):
 
 
 # ============================================================================
+# USER SUBSCRIPTIONS
+# ============================================================================
+
+class UserSubscription(models.Model):
+    SUBSCRIPTION_STATUS = [
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    subscription_id = models.AutoField(primary_key=True, db_column='SUBSCRIPTION_ID')
+    userid = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        db_column='USERID',
+        related_name='subscriptions'
+    )
+    pricing_id = models.ForeignKey(
+        PricingPlan,
+        on_delete=models.RESTRICT,
+        db_column='PRICING_ID'
+    )
+    subscription_status = models.CharField(
+        max_length=10,
+        choices=SUBSCRIPTION_STATUS,
+        default='active',
+        db_column='SUBSCRIPTION_STATUS'
+    )
+    listings_used = models.IntegerField(default=0, db_column='LISTINGS_USED')
+    starts_at = models.DateTimeField(db_column='STARTS_AT')
+    expires_at = models.DateTimeField(null=True, blank=True, db_column='EXPIRES_AT')
+    auto_renew = models.BooleanField(default=False, db_column='AUTO_RENEW')
+    createdat = models.DateTimeField(auto_now_add=True, db_column='CREATEDAT')
+    updatedat = models.DateTimeField(auto_now=True, db_column='UPDATEDAT')
+
+    class Meta:
+        db_table = 'USER_SUBSCRIPTIONS'
+        indexes = [
+            models.Index(fields=['userid']),
+            models.Index(fields=['subscription_status']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.userid.full_name} - {self.pricing_id.pricing_name}"
+
+    @property
+    def is_active(self):
+        """Check if subscription is currently active"""
+        if self.subscription_status != 'active':
+            return False
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        return True
+
+    @property
+    def remaining_listings(self):
+        """Calculate remaining listings quota"""
+        return max(0, self.pricing_id.max_listings - self.listings_used)
+
+    @property
+    def has_quota(self):
+        """Check if user still has listing quota available"""
+        return self.remaining_listings > 0
+
+
+# ============================================================================
 # LISTINGS
 # ============================================================================
 

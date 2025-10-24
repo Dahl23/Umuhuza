@@ -26,6 +26,9 @@ urlpatterns = [
     
     # Pricing Plans
     path('pricing-plans/', views.pricing_plans_list, name='pricing-plans'),
+
+    # User Subscription
+    path('subscription/current/', views.current_subscription, name='current-subscription'),
     
     # Reports
     path('reports/create/', views.report_create, name='report-create'),

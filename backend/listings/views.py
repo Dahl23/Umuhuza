@@ -14,12 +14,15 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, Avg
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Category, Listing, ListingImage, PricingPlan, RatingReview, Favorite, ReportMisconduct
+from .models import Category, Listing, ListingImage, PricingPlan, RatingReview, Favorite, ReportMisconduct, UserSubscription
 from .serializers import (
     CategorySerializer, ListingSerializer, ListingCreateSerializer,
     ListingDetailSerializer, PricingPlanSerializer, RatingReviewSerializer,
-    RatingReviewCreateSerializer, FavoriteSerializer, ReportMisconductSerializer, ReportCreateSerializer
+    RatingReviewCreateSerializer, FavoriteSerializer, ReportMisconductSerializer, ReportCreateSerializer,
+    UserSubscriptionSerializer
 )
+from django.utils import timezone
+from datetime import timedelta
 
 from notifications.utils import create_notification
 
@@ -420,6 +423,32 @@ def pricing_plans_list(request):
     plans = PricingPlan.objects.filter(is_active=True)
     serializer = PricingPlanSerializer(plans, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_subscription(request):
+    """
+    Get user's current active subscription
+    GET /api/subscription/current/
+    """
+    subscription = UserSubscription.objects.filter(
+        userid=request.user,
+        subscription_status='active'
+    ).select_related('pricing_id').first()
+
+    if not subscription:
+        return Response({
+            'message': 'No active subscription found',
+            'has_subscription': False
+        })
+
+    serializer = UserSubscriptionSerializer(subscription)
+    return Response({
+        'has_subscription': True,
+        'subscription': serializer.data
+    })
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

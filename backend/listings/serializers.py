@@ -4,8 +4,8 @@ from django.contrib.auth import get_user_model
 
 from users.serializers import UserPublicSerializer
 from .models import (
-    User, Category, Listing, ListingImage,  
-    PricingPlan, RatingReview, Favorite, ReportMisconduct
+    User, Category, Listing, ListingImage,
+    PricingPlan, RatingReview, Favorite, ReportMisconduct, UserSubscription
 )
 
 User = get_user_model()
@@ -113,7 +113,27 @@ class PricingPlanSerializer(serializers.ModelSerializer):
             'plan_price', 'duration_days', 'category_scope',
             'max_listings', 'max_images_per_listing', 'is_featured'
         ]
-        
+
+
+class UserSubscriptionSerializer(serializers.ModelSerializer):
+    plan = PricingPlanSerializer(source='pricing_id', read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
+    remaining_listings = serializers.IntegerField(read_only=True)
+    has_quota = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = UserSubscription
+        fields = [
+            'subscription_id', 'plan', 'subscription_status',
+            'listings_used', 'starts_at', 'expires_at',
+            'is_active', 'remaining_listings', 'has_quota',
+            'createdat', 'updatedat'
+        ]
+        read_only_fields = [
+            'subscription_id', 'createdat', 'updatedat'
+        ]
+
+
 # ============================================================================
 # RATING & REVIEW SERIALIZERS
 # ============================================================================

@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useQuery } from '@tanstack/react-query';
+import { listingsApi } from '../api/listings';
 import Layout from '../components/layout/Layout';
 import Button from '../components/common/Button';
 import ReviewsList from '../components/reviews/ReviewsList';
@@ -15,6 +17,13 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
+  // Fetch user's subscription
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['current-subscription'],
+    queryFn: listingsApi.getCurrentSubscription,
+    enabled: !!user,
+  });
+
   if (!user) {
     navigate('/login');
     return null;
@@ -25,6 +34,8 @@ export default function ProfilePage() {
     toast.success('Logged out successfully');
     navigate('/');
   };
+
+  const subscription = subscriptionData?.subscription;
 
   return (
     <Layout>
@@ -38,9 +49,12 @@ export default function ProfilePage() {
         <div className="card mb-6">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold text-3xl">
-                {user.user_firstname[0]}{user.user_lastname[0]}
-              </div>
+              <Avatar
+                src={user.profile_photo}
+                firstName={user.user_firstname}
+                lastName={user.user_lastname}
+                size="xl"
+              />
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{user.full_name}</h2>
                 <p className="text-gray-600 capitalize">{user.user_role}</p>
@@ -104,6 +118,64 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Current Subscription */}
+        {subscription && (
+          <div className="card mb-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-primary-600" />
+              Current Plan
+            </h3>
+            <div className="bg-gradient-to-br from-primary-50 to-purple-50 rounded-lg p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-1">
+                    {subscription.plan.pricing_name}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {subscription.plan.pricing_description}
+                  </p>
+                </div>
+                {parseFloat(subscription.plan.plan_price) === 0 ? (
+                  <Zap className="w-8 h-8 text-gray-600" />
+                ) : (
+                  <Star className="w-8 h-8 text-primary-600" />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-white rounded-lg p-3">
+                  <p className="text-xs text-gray-600 mb-1">Listings Used</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {subscription.listings_used} / {subscription.plan.max_listings}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-3">
+                  <p className="text-xs text-gray-600 mb-1">Remaining</p>
+                  <p className="text-2xl font-bold text-primary-600">
+                    {subscription.remaining_listings}
+                  </p>
+                </div>
+              </div>
+
+              {subscription.expires_at && (
+                <p className="text-sm text-gray-600 mb-4">
+                  Expires: {format(new Date(subscription.expires_at), 'MMMM d, yyyy')}
+                </p>
+              )}
+
+              {subscription.remaining_listings === 0 && (
+                <Button
+                  fullWidth
+                  onClick={() => navigate('/pricing')}
+                  className="bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700"
+                >
+                  Upgrade Plan
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Badges */}
         {user.badges && user.badges.length > 0 && (

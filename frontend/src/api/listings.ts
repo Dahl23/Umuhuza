@@ -87,4 +87,10 @@ export const listingsApi = {
     const response = await apiClient.get('/favorites/');
     return response.data;
   },
+
+  // Get current subscription
+  getCurrentSubscription: async (): Promise<any> => {
+    const response = await apiClient.get('/subscription/current/');
+    return response.data;
+  },
 };

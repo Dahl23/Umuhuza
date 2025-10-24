@@ -13,7 +13,7 @@ from .serializers import (
     PaymentSerializer, PaymentCreateSerializer,
     DealerApplicationSerializer, DealerDocumentSerializer
 )
-from listings.models import PricingPlan, Listing
+from listings.models import PricingPlan, Listing, UserSubscription
 from notifications.utils import notify_payment_success, create_notification
 
 
@@ -226,19 +226,58 @@ def payment_verify(request):
     payment.confirmed_at = timezone.now()
     payment.transaction_id = f"TXN-{uuid.uuid4().hex[:12].upper()}"
     payment.save()
-    
-    # Apply benefits to listing
+
+    plan = payment.pricing_id
+
+    # Create or update user subscription
+    starts_at = timezone.now()
+    expires_at = starts_at + timedelta(days=plan.duration_days)
+
+    # Check if user already has an active subscription for this plan
+    subscription = UserSubscription.objects.filter(
+        userid=request.user,
+        pricing_id=plan,
+        subscription_status='active'
+    ).first()
+
+    if subscription:
+        # Extend existing subscription
+        if subscription.expires_at and subscription.expires_at > timezone.now():
+            # Add to existing expiration
+            subscription.expires_at = subscription.expires_at + timedelta(days=plan.duration_days)
+        else:
+            # Renew from now
+            subscription.starts_at = starts_at
+            subscription.expires_at = expires_at
+        subscription.subscription_status = 'active'
+        subscription.save()
+    else:
+        # Create new subscription
+        subscription = UserSubscription.objects.create(
+            userid=request.user,
+            pricing_id=plan,
+            subscription_status='active',
+            starts_at=starts_at,
+            expires_at=expires_at,
+            listings_used=0,
+            auto_renew=False
+        )
+
+    # Apply benefits to specific listing if provided
     if payment.listing_id:
         listing = payment.listing_id
-        plan = payment.pricing_id
-        
+
         if plan.is_featured:
             listing.is_featured = True
-        
-        listing.expiration_date = timezone.now() + timedelta(days=plan.duration_days)
+
+        listing.expiration_date = expires_at
         listing.listing_status = 'active'
         listing.save()
-    
+
+        # Increment subscription's listing counter
+        subscription.listings_used += 1
+        subscription.save(update_fields=['listings_used', 'updatedat'])
+
     # Notify user
     notify_payment_success(
         user=request.user,
