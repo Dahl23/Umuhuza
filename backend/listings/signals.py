@@ -6,7 +6,8 @@ from .models import Listing
 @receiver(post_save, sender=Listing)
 def set_user_as_seller(sender, instance, created, **kwargs):
     """
-    Automatically set is_seller flag when user creates their first listing
+    Automatically promote user from 'buyer' to 'seller' when they create their first listing.
+    This allows users to be both buyers and sellers on the platform.
     """
     if created and instance.userid:
         user = instance.userid
