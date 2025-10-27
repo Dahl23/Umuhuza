@@ -41,7 +41,7 @@ class PricingPlan(models.Model):
     pricing_id = models.AutoField(primary_key=True, db_column='PRICING_ID')
     pricing_name = models.CharField(max_length=255, db_column='PRICING_NAME')
     pricing_description = models.TextField(db_column='PRICING_DESCRIPTION')
-    plan_price = models.DecimalField(max_digits=10, decimal_places=2, db_column='PLAN_PRICE')
+    plan_price = models.DecimalField(max_digits=12, decimal_places=2, db_column='PLAN_PRICE')
     duration_days = models.IntegerField(db_column='DURATION_DAYS')
     category_scope = models.CharField(max_length=20, choices=CATEGORY_SCOPE, db_column='CATEGORY_SCOPE')
     max_listings = models.IntegerField(default=1, db_column='MAX_LISTINGS')
@@ -143,7 +143,7 @@ class Listing(models.Model):
     cat_id = models.ForeignKey(Category, on_delete=models.RESTRICT, db_column='CAT_ID')
     listing_title = models.CharField(max_length=255, db_column='LISTING_TITLE')
     list_description = models.TextField(db_column='LIST_DESCRIPTION')
-    listing_price = models.DecimalField(max_digits=10, decimal_places=2, db_column='LISTING_PRICE')
+    listing_price = models.DecimalField(max_digits=15, decimal_places=2, db_column='LISTING_PRICE')
     list_location = models.CharField(max_length=255, db_column='LIST_LOCATION')
     listing_status = models.CharField(
         max_length=10, 

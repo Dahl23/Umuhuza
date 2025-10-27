@@ -1,0 +1,52 @@
+@startuml diagramme_etats_annonce
+[*] --> Brouillon : Vendeur commence\nà créer
+
+note right of Brouillon
+  État temporaire pendant
+  la saisie du formulaire
+end note
+
+Brouillon --> Active : Vendeur soumet\n+ abonnement actif\n(ACTIVATION AUTO)
+
+note right of Active
+  Activée AUTOMATIQUEMENT
+  par le système d'abonnement.
+  AUCUNE approbation admin!
+
+  expiration_date = NOW() + duration
+  is_seller = True
+  subscription.listings_used += 1
+end note
+
+Active --> Vendue : Vendeur marque\ncomme vendue
+
+Active --> Masquee : Vendeur masque\ntemporairement
+
+Active --> Expiree : Date expiration\natteinte (auto)
+
+note right of Expiree
+  Système expire automatiquement
+  après expiration_date
+  (durée selon plan tarifaire)
+end note
+
+Masquee --> Active : Vendeur réactive\n(si quota dispo)
+
+Expiree --> Active : Vendeur renouvelle\n(nouveau paiement)
+
+Active --> Supprimee : Vendeur/Admin\nsupprime
+Masquee --> Supprimee : Vendeur/Admin\nsupprime
+Expiree --> Supprimee : Auto-suppression\naprès 90 jours
+
+Vendue --> [*]
+Supprimee --> [*]
+
+note bottom
+  États possibles: active, sold, hidden, expired
+  Pas d'état "pending" car activation automatique!
+
+  Règle clé (voir views.py ligne 148):
+  listing.listing_status = 'active'  # Immédiat!
+end note
+
+@enduml

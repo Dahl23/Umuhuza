@@ -1,0 +1,571 @@
+% =============== CHAPITRE 3: ANALYSE ET CONCEPTION ===============
+\chapter{Analyse et conception}
+
+\section{Modélisation UML}
+
+Cette section présente la modélisation complète du système Umuhuza à travers les 13 diagrammes UML standard. Tous les diagrammes ont été générés en utilisant PlantUML et sont disponibles dans le répertoire \texttt{/rapport/diagrams/}.
+
+\subsection{Diagramme de classes}
+
+Le diagramme de classes présente la structure complète du système avec ses 17 entités principales organisées en 5 packages Django.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/class_diagram.png}
+\caption{Diagramme de classes complet du système Umuhuza}
+\label{fig:class_diagram}
+\end{figure}
+
+\textbf{Packages principaux:}
+\begin{itemize}
+    \item \textbf{users:} Gestion des utilisateurs (User, VerificationCode, UserBadge, ActivityLog)
+    \item \textbf{listings:} Gestion des annonces (Listing, Category, ListingImage, PricingPlan, UserSubscription, RatingReview, Favorite, ReportMisconduct)
+    \item \textbf{messaging:} Système de messagerie (Chat, Message)
+    \item \textbf{notifications:} Notifications (Notification)
+    \item \textbf{payments:} Paiements et dealers (Payment, DealerApplication, DealerDocument)
+\end{itemize}
+
+\textbf{Relations clés:}
+\begin{itemize}
+    \item Un utilisateur peut créer plusieurs annonces (1-N)
+    \item Une annonce appartient à une catégorie (N-1)
+    \item Une annonce peut avoir plusieurs images (1-N)
+    \item Un chat est lié à une annonce et deux utilisateurs (N-1-1)
+    \item Un paiement est lié à un utilisateur et un plan tarifaire (N-1-1)
+\end{itemize}
+
+% NOTE: Remplacer par les images PNG générées depuis les fichiers .puml
+% Pour générer: java -jar plantuml.jar class_diagram.puml
+
+\subsection{Diagramme de composants}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{../diagrams/architecture_components.png}
+\caption{Architecture en composants du système}
+\label{fig:components}
+\end{figure}
+
+Le système est organisé en trois couches principales:
+\begin{enumerate}
+    \item \textbf{Frontend Layer:} Application React SPA avec React Router, Context API pour la gestion d'état, et Axios comme client API.
+    \item \textbf{Backend Layer:} Django 5.2 avec DRF, authentification JWT, CORS, et traitement d'images.
+    \item \textbf{Data Layer:} PostgreSQL pour le stockage relationnel, S3/Local pour les fichiers.
+\end{enumerate}
+
+\subsection{Diagramme de déploiement}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/deployment_diagram.png}
+\caption{Diagramme de déploiement de l'infrastructure}
+\label{fig:deployment}
+\end{figure}
+
+\textbf{Infrastructure de déploiement:}
+\begin{itemize}
+    \item \textbf{Frontend:} Hébergé sur Vercel/Netlify avec CDN Cloudflare
+    \item \textbf{Backend:} Serveurs d'application Django sur Railway/DigitalOcean avec Gunicorn
+    \item \textbf{Base de données:} PostgreSQL managé (DigitalOcean Managed Database ou AWS RDS)
+    \item \textbf{Stockage fichiers:} AWS S3 ou Cloudflare R2
+    \item \textbf{Services externes:} SendGrid (email), Africa's Talking (SMS), Lumicash (paiement)
+    \item \textbf{Monitoring:} Sentry (erreurs), Google Analytics (usage)
+\end{itemize}
+
+\subsection{Diagramme d'objets}
+
+\begin{figure}[H]
+\centering
+% TODO: Générer diagramme d'objets montrant des instances concrètes
+\fbox{\parbox{\textwidth}{
+\textbf{Exemple d'instances concrètes:}\\
+\\
+\texttt{user1: User}\\
+\texttt{- userid = 1}\\
+\texttt{- email = "john@example.com"}\\
+\texttt{- user\_firstname = "John"}\\
+\texttt{- is\_seller = True}\\
+\\
+\texttt{listing1: Listing}\\
+\texttt{- listing\_id = 123}\\
+\texttt{- listing\_title = "Villa moderne à Bujumbura"}\\
+\texttt{- listing\_price = 150000000}\\
+\texttt{- userid = user1}\\
+\\
+\texttt{image1: ListingImage}\\
+\texttt{- listimage\_id = 1}\\
+\texttt{- listing\_id = listing1}\\
+\texttt{- is\_primary = True}
+}}
+\caption{Exemple d'instances d'objets métier}
+\label{fig:objects}
+\end{figure}
+
+\subsection{Diagramme de packages}
+
+\begin{figure}[H]
+\centering
+% TODO: Générer diagramme de packages
+\fbox{\parbox{0.8\textwidth}{
+\textbf{Organisation des packages:}\\
+\\
+\texttt{backend/}\\
+\texttt{├── umuhuza\_api/ (configuration Django)}\\
+\texttt{├── users/ (package utilisateurs)}\\
+\texttt{├── listings/ (package annonces)}\\
+\texttt{├── messaging/ (package messagerie)}\\
+\texttt{├── notifications/ (package notifications)}\\
+\texttt{├── payments/ (package paiements)}\\
+\texttt{└── media/ (fichiers uploadés)}
+}}
+\caption{Organisation en packages de l'application}
+\label{fig:packages}
+\end{figure}
+
+\subsection{Diagramme de structure composite}
+
+Le modèle User peut être vu comme une structure composite avec plusieurs sous-composants:
+\begin{itemize}
+    \item Profil de base (informations personnelles)
+    \item Mécanisme d'authentification (mot de passe, tokens)
+    \item Système de vérification (email, téléphone)
+    \item Collection de badges
+    \item Historique d'activité
+\end{itemize}
+
+\subsection{Diagramme de cas d'utilisation}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/use_case_diagram.png}
+\caption{Diagramme de cas d'utilisation complet}
+\label{fig:use_case}
+\end{figure}
+
+\textbf{Acteurs et leurs cas d'utilisation:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Acteur} & \textbf{Cas d'utilisation} \\
+\hline
+Visiteur & Consulter annonces, Rechercher, Filtrer, S'inscrire, Se connecter \\
+\hline
+Acheteur & Contacter vendeur, Ajouter favoris, Envoyer message, Noter vendeur, Signaler \\
+\hline
+Vendeur & Créer annonce, Modifier annonce, Gérer photos, Consulter stats, Acheter plan premium \\
+\hline
+Dealer & Soumettre candidature, Créer annonces illimitées, Dashboard analytics, Gérer abonnement \\
+\hline
+Admin & Modérer annonces, Gérer utilisateurs, Traiter signalements, Approuver dealers, Consulter logs \\
+\hline
+\end{tabular}
+\caption{Matrice acteurs/cas d'utilisation}
+\end{table}
+
+\subsection{Diagramme de séquence}
+
+\subsubsection{Séquence d'inscription utilisateur}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/sequence_registration.png}
+\caption{Diagramme de séquence - Inscription et vérification utilisateur}
+\label{fig:seq_registration}
+\end{figure}
+
+\textbf{Étapes du processus:}
+\begin{enumerate}
+    \item L'utilisateur remplit le formulaire d'inscription
+    \item Le frontend valide les données localement
+    \item Une requête POST est envoyée à l'API avec les informations
+    \item Le backend vérifie l'unicité de l'email
+    \item Le mot de passe est hashé avec PBKDF2
+    \item L'utilisateur est créé avec \texttt{is\_verified=False}
+    \item Un code de vérification à 6 chiffres est généré
+    \item Un email est envoyé avec le code
+    \item L'utilisateur saisit le code reçu
+    \item Le backend vérifie la validité du code
+    \item Le statut \texttt{email\_verified} est mis à jour
+    \item L'utilisateur est connecté automatiquement
+\end{enumerate}
+
+\subsubsection{Séquence de création d'annonce}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/sequence_create_listing.png}
+\caption{Diagramme de séquence - Création d'annonce avec photos}
+\label{fig:seq_listing}
+\end{figure}
+
+\subsubsection{Séquence de messagerie}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/sequence_messaging.png}
+\caption{Diagramme de séquence - Messagerie entre acheteur et vendeur}
+\label{fig:seq_messaging}
+\end{figure}
+
+\subsubsection{Séquence de paiement}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/sequence_payment.png}
+\caption{Diagramme de séquence - Processus de paiement Lumicash}
+\label{fig:seq_payment}
+\end{figure}
+
+\subsection{Diagramme de communication}
+
+Les diagrammes de communication complètent les diagrammes de séquence en montrant la structure des interactions entre objets.
+
+\textbf{Communication lors d'une création d'annonce:}
+\begin{itemize}
+    \item Frontend $\leftrightarrow$ Backend API: POST /api/listings/create/
+    \item Backend API $\leftrightarrow$ Database: INSERT INTO LISTINGS
+    \item Backend API $\leftrightarrow$ Storage: Upload images
+    \item Backend API $\leftrightarrow$ Notification Service: Notify admin
+\end{itemize}
+
+\subsection{Diagramme d'activités}
+
+\subsubsection{Activité: Inscription utilisateur}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{../diagrams/activity_registration.png}
+\caption{Diagramme d'activité - Processus d'inscription}
+\label{fig:act_registration}
+\end{figure}
+
+\subsubsection{Activité: Création d'annonce}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{../diagrams/activity_create_listing.png}
+\caption{Diagramme d'activité - Création d'annonce avec vérification de quota}
+\label{fig:act_listing}
+\end{figure}
+
+\subsubsection{Activité: Traitement de paiement}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{../diagrams/activity_payment.png}
+\caption{Diagramme d'activité - Processus de paiement}
+\label{fig:act_payment}
+\end{figure}
+
+\subsection{Diagramme d'états (états-transitions)}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{../diagrams/state_listing.png}
+\caption{Diagramme d'états - Cycle de vie d'une annonce}
+\label{fig:state_listing}
+\end{figure}
+
+\textbf{États possibles d'une annonce:}
+\begin{itemize}
+    \item \textbf{Draft:} Annonce en cours de création
+    \item \textbf{Pending:} Soumise, en attente de modération admin
+    \item \textbf{Active:} Approuvée et visible publiquement
+    \item \textbf{Hidden:} Masquée temporairement par le vendeur
+    \item \textbf{Sold:} Marquée comme vendue
+    \item \textbf{Expired:} Date d'expiration dépassée
+    \item \textbf{Rejected:} Rejetée par l'admin lors de la modération
+    \item \textbf{Deleted:} Supprimée (soft delete)
+\end{itemize}
+
+\subsection{Diagramme de temporisation}
+
+Le diagramme de temporisation illustre le comportement temporel du système de vérification:
+
+\begin{itemize}
+    \item \textbf{T0:} Génération du code de vérification
+    \item \textbf{T0+15min:} Code expire si non utilisé
+    \item \textbf{T0+3 tentatives:} Blocage temporaire du compte si 3 codes invalides
+    \item \textbf{T0+24h:} Suppression automatique du compte si non vérifié
+\end{itemize}
+
+\subsection{Diagramme d'interaction global}
+
+Le diagramme d'interaction global combine les différents diagrammes d'interaction pour montrer le flux complet d'une transaction:
+
+\begin{enumerate}
+    \item Inscription et vérification (diagramme de séquence)
+    \item Création d'annonce (diagramme d'activité)
+    \item Contact vendeur (diagramme de communication)
+    \item Négociation par messages (diagramme de séquence)
+    \item Paiement si plan premium (diagramme de séquence)
+    \item Finalisation transaction (diagramme d'états)
+\end{enumerate}
+
+\section{Modélisation de la base de données}
+
+\subsection{MCD (Modèle Conceptuel des Données)}
+
+Le MCD présente les entités métier et leurs associations sans considérations techniques.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/er_diagram.png}
+\caption{Modèle Conceptuel des Données (MCD)}
+\label{fig:mcd}
+\end{figure}
+
+\textbf{Entités principales:}
+\begin{itemize}
+    \item USERS: Stocke les utilisateurs du système
+    \item LISTINGS: Stocke les annonces
+    \item CATEGORIES: Catégories d'annonces
+    \item LISTING\_IMAGES: Photos des annonces
+    \item CHATS: Conversations
+    \item MESSAGES: Messages échangés
+    \item PAYMENTS: Transactions financières
+    \item DEALER\_APPLICATIONS: Candidatures dealer
+    \item NOTIFICATIONS: Notifications utilisateur
+\end{itemize}
+
+\textbf{Cardinalités clés:}
+\begin{itemize}
+    \item USERS (1,N) -- CREATES -- (0,N) LISTINGS
+    \item LISTINGS (1,1) -- BELONGS\_TO -- (0,N) CATEGORIES
+    \item LISTINGS (1,1) -- HAS -- (1,10) LISTING\_IMAGES
+    \item USERS (1,1) -- PARTICIPATES -- (0,N) CHATS
+    \item CHATS (1,1) -- CONTAINS -- (0,N) MESSAGES
+    \item USERS (1,1) -- MAKES -- (0,N) PAYMENTS
+\end{itemize}
+
+\subsection{MLD (Modèle Logique des Données)}
+
+Le MLD traduit le MCD en schéma relationnel avec clés primaires et étrangères.
+
+\textbf{Tables principales:}
+
+\begin{lstlisting}[language=SQL, caption=Schéma relationnel (MLD)]
+USERS(
+    USERID PK,
+    USER_EMAIL UNIQUE NOT NULL,
+    USER_FIRSTNAME NOT NULL,
+    USER_LASTNAME NOT NULL,
+    PHONE_NUMBER NOT NULL,
+    PASSWORD_HASH NOT NULL,
+    USER_ROLE DEFAULT 'buyer',
+    IS_SELLER DEFAULT FALSE,
+    IS_DEALER DEFAULT FALSE,
+    IS_VERIFIED DEFAULT FALSE,
+    EMAIL_VERIFIED DEFAULT FALSE,
+    DATE_JOINED TIMESTAMP
+)
+
+CATEGORIES(
+    CAT_ID PK,
+    CAT_NAME NOT NULL,
+    SLUG UNIQUE NOT NULL,
+    CAT_DESCRIPTION TEXT,
+    IS_ACTIVE DEFAULT TRUE
+)
+
+LISTINGS(
+    LISTING_ID PK,
+    USERID FK -> USERS(USERID),
+    CAT_ID FK -> CATEGORIES(CAT_ID),
+    LISTING_TITLE NOT NULL,
+    LIST_DESCRIPTION TEXT NOT NULL,
+    LISTING_PRICE DECIMAL(15,2) NOT NULL,
+    LIST_LOCATION VARCHAR(255) NOT NULL,
+    LISTING_STATUS DEFAULT 'pending',
+    IS_FEATURED DEFAULT FALSE,
+    VIEWS INTEGER DEFAULT 0,
+    EXPIRATION_DATE TIMESTAMP,
+    CREATEDAT TIMESTAMP
+)
+
+LISTING_IMAGES(
+    LISTIMAGE_ID PK,
+    LISTING_ID FK -> LISTINGS(LISTING_ID),
+    IMAGE_URL VARCHAR(255) NOT NULL,
+    IS_PRIMARY DEFAULT FALSE,
+    DISPLAY_ORDER INTEGER,
+    UPLOADEDAT TIMESTAMP
+)
+
+CHATS(
+    CHAT_ID PK,
+    USERID FK -> USERS(USERID),
+    USERID_AS_SELLER FK -> USERS(USERID),
+    LISTING_ID FK -> LISTINGS(LISTING_ID),
+    LAST_MESSAGE_AT TIMESTAMP,
+    IS_ACTIVE DEFAULT TRUE,
+    CREATEDAT TIMESTAMP,
+    UNIQUE(USERID, USERID_AS_SELLER, LISTING_ID)
+)
+
+MESSAGES(
+    MESSAGE_ID PK,
+    USERID FK -> USERS(USERID),
+    CHAT_ID FK -> CHATS(CHAT_ID),
+    CONTENT TEXT NOT NULL,
+    MESSAGE_TYPE DEFAULT 'text',
+    IS_READ DEFAULT FALSE,
+    SENTAT TIMESTAMP
+)
+
+PAYMENTS(
+    PAYMENT_ID PK,
+    USERID FK -> USERS(USERID),
+    PRICING_ID FK -> PRICING_PLANS(PRICING_ID),
+    LISTING_ID FK -> LISTINGS(LISTING_ID),
+    PAYMENT_AMOUNT DECIMAL(10,2) NOT NULL,
+    PAYMENT_METHOD VARCHAR(20),
+    PAYMENT_STATUS DEFAULT 'pending',
+    PAYMENT_REF UNIQUE NOT NULL,
+    CREATEDAT TIMESTAMP
+)
+
+-- Autres tables: PRICING_PLANS, USER_SUBSCRIPTIONS, RATINGS_N_REVIEWS,
+-- FAVORITES, NOTIFICATIONS, REPORTS_N_MISCONDUCT, DEALER_APPLICATIONS,
+-- DEALER_DOCUMENTS, VERIFICATION_CODES, USER_BADGES, ACTIVITY_LOGS
+\end{lstlisting}
+
+\textbf{Index pour optimisation:}
+\begin{itemize}
+    \item Index sur USERS(USER\_EMAIL) - recherche utilisateur par email
+    \item Index sur LISTINGS(LISTING\_STATUS, IS\_FEATURED) - requêtes de filtrage
+    \item Index sur LISTINGS(CAT\_ID) - filtrage par catégorie
+    \item Index sur MESSAGES(CHAT\_ID, SENTAT) - historique conversations
+    \item Index sur NOTIFICATIONS(USERID, IS\_READ) - notifications non lues
+\end{itemize}
+
+\subsection{Script SQL}
+
+Le script SQL complet de création de la base de données est généré automatiquement par Django migrations.
+
+\begin{lstlisting}[language=bash, caption=Génération du schéma SQL]
+# Générer le script SQL depuis les models Django
+python manage.py sqlmigrate users 0001
+python manage.py sqlmigrate listings 0001
+python manage.py sqlmigrate messaging 0001
+# etc.
+
+# Ou exporter le schéma complet
+pg_dump -U umuhuza_admin --schema-only umuhuza > schema.sql
+\end{lstlisting}
+
+Les contraintes d'intégrité incluent:
+\begin{itemize}
+    \item \textbf{Contraintes d'unicité:} USER\_EMAIL, PAYMENT\_REF, SLUG
+    \item \textbf{Contraintes de clé étrangère:} CASCADE pour dépendances fortes (ex: images liées à annonce), SET NULL pour références optionnelles
+    \item \textbf{Contraintes CHECK:} RATING entre 1 et 5, LISTING\_PRICE $>$ 0
+    \item \textbf{Contraintes NOT NULL:} Champs obligatoires métier
+\end{itemize}
+
+\section{Design des principales interfaces}
+
+\textit{Note: Les designs Figma doivent être créés séparément et les captures d'écran insérées ici.}
+
+\subsection{Design de la page d'authentification}
+
+\begin{figure}[H]
+\centering
+% TODO: Insérer capture Figma de la page de connexion
+\fbox{\parbox{0.8\textwidth}{
+\textbf{TODO: Design Figma à créer}\\
+\\
+Éléments à inclure:
+\begin{itemize}
+    \item Formulaire de connexion (email + mot de passe)
+    \item Bouton "Se connecter"
+    \item Lien "Mot de passe oublié?"
+    \item Lien "Créer un compte"
+    \item Option "Se souvenir de moi"
+    \item Séparation visuelle avec ligne OU
+    \item Connexion via réseaux sociaux (future feature)
+\end{itemize}
+}}
+\caption{Maquette de la page d'authentification}
+\label{fig:design_login}
+\end{figure}
+
+\textbf{Charte graphique:}
+\begin{itemize}
+    \item Couleur principale: Bleu (#0277BD)
+    \item Couleur secondaire: Vert (#2E7D32)
+    \item Police: Inter ou Roboto
+    \item Design responsive mobile-first
+\end{itemize}
+
+\subsection{Design de la page d'accueil}
+
+\begin{figure}[H]
+\centering
+% TODO: Insérer capture Figma de la page d'accueil
+\fbox{\parbox{0.8\textwidth}{
+\textbf{TODO: Design Figma à créer}\\
+\\
+Sections:
+\begin{itemize}
+    \item Header avec logo, barre de recherche, navigation
+    \item Hero section avec call-to-action
+    \item Annonces featured en carrousel
+    \item Catégories en grille
+    \item Annonces récentes en grille
+    \item Statistiques de la plateforme
+    \item Footer avec liens et informations
+\end{itemize}
+}}
+\caption{Maquette de la page d'accueil}
+\label{fig:design_home}
+\end{figure}
+
+\subsection{Design d'un formulaire de saisie}
+
+\begin{figure}[H]
+\centering
+% TODO: Insérer capture Figma du formulaire de création d'annonce
+\fbox{\parbox{0.8\textwidth}{
+\textbf{TODO: Design Figma à créer}\\
+\\
+Formulaire multi-étapes:
+\begin{itemize}
+    \item Étape 1: Sélection catégorie
+    \item Étape 2: Informations générales (titre, description, prix, localisation)
+    \item Étape 3: Upload de photos (drag \& drop)
+    \item Étape 4: Prévisualisation et confirmation
+    \item Indicateur de progression visuel
+    \item Validation en temps réel
+\end{itemize}
+}}
+\caption{Maquette du formulaire de création d'annonce}
+\label{fig:design_form}
+\end{figure}
+
+\subsection{Design de la page d'affichage enregistrements}
+
+\begin{figure}[H]
+\centering
+% TODO: Insérer capture Figma de la page de liste d'annonces
+\fbox{\parbox{0.8\textwidth}{
+\textbf{TODO: Design Figma à créer}\\
+\\
+Éléments:
+\begin{itemize}
+    \item Barre de filtres latérale (catégorie, prix, localisation)
+    \item Grille d'annonces avec images, titre, prix, localisation
+    \item Badges (Featured, Nouveau, Urgent)
+    \item Boutons d'action (Favoris, Partager)
+    \item Pagination en bas de page
+    \item Tri par (Plus récent, Prix croissant/décroissant, Popularité)
+    \item Vue alternative en liste
+\end{itemize}
+}}
+\caption{Maquette de la page de recherche/liste d'annonces}
+\label{fig:design_listing}
+\end{figure}
+
+% FIN DE LA PARTIE 2
+% Continuer avec Chapitre 4 dans le document principal

@@ -1,0 +1,49 @@
+@startuml sequence_messagerie
+autonumber
+
+actor "Acheteur" as buyer
+participant "Frontend" as frontend
+participant "Backend API" as backend
+database "PostgreSQL" as db
+participant "Service\nNotification" as notif
+
+buyer -> frontend: Clique "Contacter vendeur"\nsur annonce #456
+frontend -> backend: POST /api/chats/create/\n{listing_id: 456}
+
+backend -> backend: Vérifie JWT token
+backend -> db: SELECT seller FROM LISTINGS\nWHERE listing_id=456
+db --> backend: seller_id = 789
+
+backend -> db: SELECT * FROM CHATS WHERE\nbuyer=user AND listing=456
+
+alt Chat existe
+    db --> backend: chat_id = 100
+    backend --> frontend: 200 OK {chat_id: 100}
+else Nouveau chat
+    backend -> db: INSERT INTO CHATS
+    db --> backend: chat_id = 101
+    backend --> frontend: 201 Created {chat_id: 101}
+end
+
+frontend -> backend: GET /api/chats/101/messages/
+backend -> db: SELECT * FROM MESSAGES
+db --> backend: messages[]
+backend --> frontend: 200 OK {messages}
+
+buyer -> frontend: Tape message
+frontend -> backend: POST /api/chats/101/messages/send/\n{content: "..."}
+
+backend -> db: INSERT INTO MESSAGES
+db --> backend: message_id = 500
+
+backend -> db: UPDATE CHATS\nSET last_message_at=NOW()
+db --> backend: OK
+
+backend -> notif: Crée notification vendeur
+notif -> db: INSERT INTO NOTIFICATIONS
+db --> notif: OK
+
+backend --> frontend: 201 Created {message}
+frontend --> buyer: Message envoyé ✓
+
+@enduml

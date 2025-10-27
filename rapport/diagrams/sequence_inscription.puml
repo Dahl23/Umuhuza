@@ -1,0 +1,44 @@
+@startuml sequence_inscription
+autonumber
+
+actor "Utilisateur" as user
+participant "Frontend\n(React)" as frontend
+participant "Backend\nDjango API" as backend
+database "PostgreSQL" as db
+participant "Service\nEmail" as email
+
+user -> frontend: Remplit formulaire inscription
+frontend -> frontend: Valide données localement
+frontend -> backend: POST /api/auth/register/\n(email, phone, password, ...)
+
+backend -> backend: Valide données
+backend -> db: Vérifie email unique
+db --> backend: OK
+
+backend -> db: Hash password (PBKDF2)
+backend -> db: Crée User\n(is_verified=False)
+db --> backend: User créé
+
+backend -> backend: Génère code vérification
+backend -> db: Sauvegarde VerificationCode
+db --> backend: OK
+
+backend -> email: Envoie email vérification
+email --> backend: Email envoyé
+
+backend --> frontend: 201 Created\n{user, tokens}
+frontend --> user: Affiche page vérification
+
+user -> frontend: Saisit code vérification
+frontend -> backend: POST /api/auth/verify-email/\n{code}
+
+backend -> db: Vérifie code valide
+db --> backend: Code valide
+
+backend -> db: Met à jour User\n(email_verified=True)
+db --> backend: OK
+
+backend --> frontend: 200 OK
+frontend --> user: Email vérifié ✓
+
+@enduml

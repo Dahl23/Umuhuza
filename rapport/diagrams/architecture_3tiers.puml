@@ -1,0 +1,58 @@
+@startuml architecture_3tiers
+
+package "Couche Présentation\n(Client)" {
+    [Navigateur Web] as browser
+    [Application React] as react
+    [Application Mobile\n(Future)] as mobile
+}
+
+package "Couche Application\n(Serveur)" {
+    [Load Balancer\n(Nginx)] as lb
+    [Serveur Django 1] as app1
+    [Serveur Django 2] as app2
+    [Workers Celery\n(Tâches Arrière-Plan)] as celery
+    [Redis\n(Cache & Queue)] as redis
+}
+
+package "Couche Données\n(Stockage)" {
+    database "PostgreSQL\nMaster" as db_master
+    database "PostgreSQL\nReplica (Lecture)" as db_replica
+    storage "Stockage Objets S3" as s3
+}
+
+package "Services Externes" {
+    [Passerelle Email] as email
+    [Passerelle SMS] as sms
+    [Passerelle Paiement] as payment
+}
+
+browser --> react : Charge
+react --> lb : Requêtes API\n(HTTPS)
+mobile --> lb : Requêtes API\n(HTTPS)
+
+lb --> app1 : Distribue
+lb --> app2 : Distribue
+
+app1 --> db_master : Opérations Écriture
+app1 --> db_replica : Opérations Lecture
+app2 --> db_master : Opérations Écriture
+app2 --> db_replica : Opérations Lecture
+
+app1 --> redis : Cache/Session
+app2 --> redis : Cache/Session
+app1 --> celery : Met en File
+app2 --> celery : Met en File
+
+celery --> redis : Récupère Tâches
+celery --> db_master : Écrit
+
+app1 --> s3 : Stocke/Récupère
+app2 --> s3 : Stocke/Récupère
+
+app1 --> email : Envoie Emails
+app1 --> sms : Envoie SMS
+app1 --> payment : Traite Paiements
+
+db_master --> db_replica : Réplication
+
+@enduml

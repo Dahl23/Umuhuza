@@ -1,0 +1,907 @@
+% =============== CHAPITRE 4: RÉALISATION TECHNIQUE ===============
+\chapter{Réalisation technique}
+
+\section{Technologies utilisées}
+
+\subsection{SGBD utilisé}
+
+\textbf{PostgreSQL 15.8}
+
+PostgreSQL a été choisi comme système de gestion de base de données pour les raisons suivantes:
+\begin{itemize}
+    \item \textbf{Open-source et gratuit:} Pas de coûts de licence
+    \item \textbf{ACID compliant:} Garantie de l'intégrité transactionnelle
+    \item \textbf{Performance:} Gestion efficace de grandes quantités de données
+    \item \textbf{Fonctionnalités avancées:} Support JSON, full-text search, GIS avec PostGIS
+    \item \textbf{Fiabilité:} Système mature et éprouvé en production
+    \item \textbf{Compatibilité Django:} Excellent support avec django.db.backends.postgresql
+\end{itemize}
+
+\textbf{Configuration:}
+\begin{lstlisting}[language=Python]
+# settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'umuhuza',
+        'USER': 'umuhuza_admin',
+        'PASSWORD': 'umuhuza_admin_2025',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'CONN_MAX_AGE': 600,  # Connection pooling
+        'OPTIONS': {
+            'connect_timeout': 10,
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Framework Spring, dépendances, librairies, outils, IDE}
+
+\textit{Note: Bien que le cahier des charges mentionne Spring, notre projet utilise Django (framework Python). Voici l'équivalent Django.}
+
+\subsubsection{Framework principal: Django 5.2.7}
+
+Django est un framework web Python de haut niveau qui encourage le développement rapide et pragmatique.
+
+\textbf{Avantages:}
+\begin{itemize}
+    \item \textbf{Batteries included:} ORM, authentification, admin, migrations, etc.
+    \item \textbf{MTV Architecture:} Model-Template-View (équivalent de MVC)
+    \item \textbf{Sécurité intégrée:} Protection CSRF, XSS, SQL injection
+    \item \textbf{Scalabilité:} Utilisé par Instagram, Pinterest, Mozilla
+    \item \textbf{Documentation exceptionnelle:} Guides complets et à jour
+\end{itemize}
+
+\subsubsection{Django REST Framework 3.16.1}
+
+DRF est une extension de Django pour créer des API REST puissantes.
+
+\textbf{Fonctionnalités utilisées:}
+\begin{itemize}
+    \item Serializers pour la validation et transformation des données
+    \item ViewSets pour l'organisation des endpoints
+    \item Permissions pour le contrôle d'accès
+    \item Pagination automatique
+    \item Browsable API pour le développement
+\end{itemize}
+
+\subsubsection{Liste complète des dépendances}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Package} & \textbf{Version} & \textbf{Usage} \\
+\hline
+Django & 5.2.7 & Framework web principal \\
+djangorestframework & 3.16.1 & API REST \\
+django-cors-headers & 4.9.0 & Gestion CORS pour frontend séparé \\
+django-filter & 25.2 & Filtrage avancé des querysets \\
+python-decouple & 3.8 & Gestion variables d'environnement \\
+\hline
+psycopg2-binary & 2.9.11 & Driver PostgreSQL \\
+\hline
+djangorestframework-simplejwt & 5.5.1 & Authentification JWT \\
+\hline
+Pillow & 12.0.0 & Traitement d'images \\
+django-imagekit & 6.0.0 & Optimisation images \\
+pilkit & 3.0 & Toolkit pour images \\
+\hline
+celery & 5.5.3 & Tâches asynchrones \\
+redis & 6.4.0 & Cache et broker Celery \\
+kombu & 5.5.4 & Messaging library pour Celery \\
+\hline
+django-storages & 1.14.2 & Backend stockage (S3) \\
+boto3 & 1.34.10 & SDK AWS pour S3 \\
+\hline
+django-extensions & 3.2.3 & Utilitaires développement \\
+ipython & 8.18.1 & Shell Python amélioré \\
+\hline
+requests & 2.32.5 & Client HTTP pour tests \\
+\hline
+gunicorn & 21.2.0 & Serveur WSGI production \\
+\hline
+\end{tabular}
+\caption{Dépendances Python du backend}
+\end{table}
+
+\subsubsection{Frontend: React 18 + TypeScript}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Package} & \textbf{Version} & \textbf{Usage} \\
+\hline
+react & 18.x & Librairie UI \\
+react-dom & 18.x & Rendering React \\
+react-router-dom & 6.x & Routing SPA \\
+typescript & 5.x & Typage statique \\
+\hline
+vite & 5.x & Build tool rapide \\
+@vitejs/plugin-react & 4.x & Plugin Vite pour React \\
+\hline
+axios & 1.x & Client HTTP \\
+@tanstack/react-query & 5.x & Gestion état serveur \\
+\hline
+tailwindcss & 3.x & Framework CSS utility-first \\
+\hline
+react-hook-form & 7.x & Gestion formulaires \\
+yup & 1.x & Validation schéma \\
+\hline
+react-toastify & 10.x & Notifications toast \\
+react-icons & 5.x & Icons library \\
+\hline
+\end{tabular}
+\caption{Dépendances JavaScript du frontend}
+\end{table}
+
+\subsubsection{Outils de développement}
+
+\begin{itemize}
+    \item \textbf{Git:} Gestion de versions (GitHub pour hébergement)
+    \item \textbf{Postman:} Tests API manuels
+    \item \textbf{PostgreSQL Client (psql):} Administration base de données
+    \item \textbf{VS Code:} Éditeur de code
+    \item \textbf{Docker:} Containerisation (optionnel)
+    \item \textbf{WSL2:} Environnement Linux sur Windows
+\end{itemize}
+
+\subsubsection{IDE: Visual Studio Code}
+
+Extensions utilisées:
+\begin{itemize}
+    \item Python (Microsoft)
+    \item Pylance (IntelliSense avancé)
+    \item ESLint (linting JavaScript/TypeScript)
+    \item Prettier (formatage code)
+    \item GitLens (visualisation Git)
+    \item Thunder Client (tests API intégrés)
+    \item Database Client (gestion PostgreSQL)
+\end{itemize}
+
+\section{Architecture logicielle}
+
+\subsection{Description de l'architecture}
+
+Le projet Umuhuza suit une \textbf{architecture 3-tiers moderne} avec séparation claire entre présentation, logique métier, et données.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../diagrams/3tier_architecture.png}
+\caption{Architecture 3-tiers du système Umuhuza}
+\label{fig:3tier}
+\end{figure}
+
+\subsubsection{Tier 1: Présentation (Client-Side)}
+
+\textbf{Technologie:} React 18 SPA (Single Page Application)
+
+\textbf{Responsabilités:}
+\begin{itemize}
+    \item Rendering de l'interface utilisateur
+    \item Gestion des interactions utilisateur
+    \item Validation côté client
+    \item Gestion de l'état local (Context API)
+    \item Communication avec l'API via Axios
+\end{itemize}
+
+\textbf{Pattern utilisé:} Component-based architecture avec hooks
+
+\subsubsection{Tier 2: Application (Server-Side)}
+
+\textbf{Technologie:} Django 5.2 + Django REST Framework
+
+\textbf{Pattern:} MTV (Model-Template-View), équivalent Django de MVC:
+\begin{itemize}
+    \item \textbf{Model:} Couche d'accès aux données (ORM Django)
+    \item \textbf{View:} Logique métier (ViewSets, APIViews)
+    \item \textbf{Template:} Remplacé par le frontend React (API-only backend)
+    \item \textbf{Serializer:} Couche supplémentaire pour transformation données
+\end{itemize}
+
+\textbf{Responsabilités:}
+\begin{itemize}
+    \item Authentification et autorisation (JWT)
+    \item Logique métier complexe
+    \item Validation serveur des données
+    \item Gestion des transactions
+    \item Intégration services externes (email, SMS, paiement)
+    \item Logging et monitoring
+\end{itemize}
+
+\subsubsection{Tier 3: Données (Data-Side)}
+
+\textbf{Composants:}
+\begin{itemize}
+    \item \textbf{PostgreSQL:} Base de données relationnelle principale
+    \item \textbf{Redis:} Cache et files de messages Celery
+    \item \textbf{S3/Local Storage:} Stockage fichiers (images, documents)
+\end{itemize}
+
+\textbf{Responsabilités:}
+\begin{itemize}
+    \item Persistance des données structurées
+    \item Gestion de l'intégrité référentielle
+    \item Optimisation des requêtes (index, views)
+    \item Backups réguliers
+\end{itemize}
+
+\subsection{Arborescence des fichiers}
+
+\begin{lstlisting}[caption=Structure du projet backend]
+backend/
+├── umuhuza_api/              # Configuration principale Django
+│   ├── __init__.py
+│   ├── settings.py           # Configuration globale
+│   ├── urls.py              # Routage principal
+│   ├── wsgi.py              # Point d'entrée WSGI
+│   ├── asgi.py              # Point d'entrée ASGI (future)
+│   └── middleware.py        # Middlewares personnalisés
+│
+├── users/                    # App gestion utilisateurs
+│   ├── migrations/          # Migrations de base de données
+│   ├── __init__.py
+│   ├── models.py            # User, VerificationCode, UserBadge, ActivityLog
+│   ├── serializers.py       # Serializers DRF
+│   ├── views.py             # ViewSets et APIViews
+│   ├── urls.py              # Routes de l'app
+│   ├── admin.py             # Configuration admin Django
+│   ├── apps.py              # Configuration de l'app
+│   ├── utils.py             # Fonctions utilitaires
+│   ├── permissions.py       # Permissions personnalisées
+│   └── tests.py             # Tests unitaires
+│
+├── listings/                 # App gestion annonces
+│   ├── migrations/
+│   ├── models.py            # Listing, Category, ListingImage, PricingPlan, etc.
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── admin.py
+│   ├── filters.py           # Filtres django-filter
+│   └── tests.py
+│
+├── messaging/                # App messagerie
+│   ├── migrations/
+│   ├── models.py            # Chat, Message
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── admin.py
+│   └── tests.py
+│
+├── notifications/            # App notifications
+│   ├── migrations/
+│   ├── models.py            # Notification
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── utils.py             # create_notification() helper
+│   └── tests.py
+│
+├── payments/                 # App paiements et dealers
+│   ├── migrations/
+│   ├── models.py            # Payment, DealerApplication, DealerDocument
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── lumicash.py          # Intégration Lumicash
+│   └── tests.py
+│
+├── media/                    # Fichiers uploadés
+│   ├── listings/            # Images d'annonces
+│   ├── profiles/            # Photos de profil
+│   └── documents/           # Documents dealers
+│
+├── staticfiles/              # Fichiers statiques collectés
+│
+├── templates/                # Templates email (optionnel)
+│   └── emails/
+│       ├── verification.html
+│       └── welcome.html
+│
+├── manage.py                 # Script de gestion Django
+├── requirements.txt          # Dépendances Python
+├── .env                      # Variables d'environnement (ignoré par git)
+├── .gitignore               # Fichiers à ignorer
+├── README.md                # Documentation
+├── test_api.py              # Script de tests API
+└── pytest.ini               # Configuration pytest
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Structure du projet frontend]
+frontend/
+├── public/                   # Fichiers publics statiques
+│   ├── index.html
+│   ├── favicon.ico
+│   └── robots.txt
+│
+├── src/                      # Code source
+│   ├── components/          # Composants réutilisables
+│   │   ├── common/         # Composants génériques
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   └── Spinner.tsx
+│   │   ├── layout/         # Composants layout
+│   │   │   ├── Header.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   └── Sidebar.tsx
+│   │   ├── listings/       # Composants annonces
+│   │   │   ├── ListingCard.tsx
+│   │   │   ├── ListingGrid.tsx
+│   │   │   ├── ListingForm.tsx
+│   │   │   └── ListingFilters.tsx
+│   │   └── auth/           # Composants authentification
+│   │       ├── LoginForm.tsx
+│   │       ├── RegisterForm.tsx
+│   │       └── VerificationForm.tsx
+│   │
+│   ├── pages/               # Pages/routes
+│   │   ├── HomePage.tsx
+│   │   ├── ListingsPage.tsx
+│   │   ├── ListingDetailPage.tsx
+│   │   ├── CreateListingPage.tsx
+│   │   ├── ProfilePage.tsx
+│   │   ├── MessagesPage.tsx
+│   │   ├── FavoritesPage.tsx
+│   │   └── DashboardPage.tsx
+│   │
+│   ├── services/            # Services API
+│   │   ├── api.ts          # Configuration Axios
+│   │   ├── authService.ts
+│   │   ├── listingsService.ts
+│   │   ├── messagesService.ts
+│   │   └── paymentsService.ts
+│   │
+│   ├── hooks/               # Custom React hooks
+│   │   ├── useAuth.ts
+│   │   ├── useListings.ts
+│   │   └── useMessages.ts
+│   │
+│   ├── context/             # Context API
+│   │   ├── AuthContext.tsx
+│   │   └── NotificationContext.tsx
+│   │
+│   ├── utils/               # Fonctions utilitaires
+│   │   ├── formatters.ts
+│   │   ├── validators.ts
+│   │   └── constants.ts
+│   │
+│   ├── types/               # Types TypeScript
+│   │   ├── user.ts
+│   │   ├── listing.ts
+│   │   └── api.ts
+│   │
+│   ├── styles/              # Fichiers CSS
+│   │   ├── globals.css
+│   │   └── tailwind.css
+│   │
+│   ├── App.tsx              # Composant racine
+│   ├── main.tsx             # Point d'entrée
+│   └── router.tsx           # Configuration routes
+│
+├── package.json             # Dépendances npm
+├── tsconfig.json            # Configuration TypeScript
+├── vite.config.ts           # Configuration Vite
+├── tailwind.config.js       # Configuration Tailwind
+├── .env                     # Variables d'environnement
+├── .gitignore
+└── README.md
+\end{lstlisting}
+
+\section{Implémentation}
+
+\subsection{Présentation du code source par modules/fonctionnalités}
+
+\subsubsection{Module Authentification (users/)}
+
+\textbf{Modèle User personnalisé:}
+
+\begin{lstlisting}[language=Python, caption=users/models.py - Modèle User]
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
+
+class UserManager(BaseUserManager):
+    def create_user(self, email, phone_number, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Users must have an email address')
+        email = self.normalize_email(email)
+        user = self.model(email=email, phone_number=phone_number, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, phone_number, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, phone_number, password, **extra_fields)
+
+class User(AbstractBaseUser, PermissionsMixin):
+    USER_ROLES = [
+        ('buyer', 'Buyer'),
+        ('seller', 'Seller'),
+        ('dealer', 'Dealer'),
+    ]
+
+    userid = models.AutoField(primary_key=True, db_column='USERID')
+    email = models.EmailField(unique=True, db_column='USER_EMAIL')
+    user_firstname = models.CharField(max_length=255)
+    user_lastname = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20)
+    user_role = models.CharField(max_length=10, choices=USER_ROLES, default='buyer')
+    is_seller = models.BooleanField(default=False)
+    is_dealer = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
+    email_verified = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['phone_number', 'user_firstname', 'user_lastname']
+
+    class Meta:
+        db_table = 'USERS'
+
+    def __str__(self):
+        return f"{self.user_firstname} {self.user_lastname} ({self.email})"
+
+    @property
+    def full_name(self):
+        return f"{self.user_firstname} {self.user_lastname}"
+\end{lstlisting}
+
+\textbf{Vue d'inscription:}
+
+\begin{lstlisting}[language=Python, caption=users/views.py - RegisterView]
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import UserRegistrationSerializer
+from .utils import send_verification_email
+
+class RegisterView(APIView):
+    """
+    Endpoint d'inscription utilisateur
+    POST /api/auth/register/
+    """
+    permission_classes = []
+
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.save()
+
+            # Générer et envoyer code de vérification
+            code = generate_verification_code()
+            VerificationCode.objects.create(
+                userid=user,
+                code=code,
+                code_type='email',
+                contact_info=user.email,
+                expires_at=timezone.now() + timedelta(minutes=15)
+            )
+
+            # Envoyer email
+            send_verification_email(user.email, code)
+
+            # Générer tokens JWT
+            tokens = generate_tokens(user)
+
+            # Log activité
+            ActivityLog.objects.create(
+                userid=user,
+                action_type='USER_REGISTERED',
+                description=f"New user registered: {user.email}"
+            )
+
+            return Response({
+                'message': 'Registration successful. Please verify your email.',
+                'user': UserSerializer(user).data,
+                'tokens': tokens
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+\end{lstlisting}
+
+\subsubsection{Module Annonces (listings/)}
+
+\textbf{ViewSet pour les annonces:}
+
+\begin{lstlisting}[language=Python, caption=listings/views.py - ListingViewSet]
+from rest_framework import viewsets, filters
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import Listing
+from .serializers import ListingSerializer, ListingDetailSerializer
+from .filters import ListingFilter
+
+class ListingViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet CRUD complet pour les annonces
+    GET /api/listings/ - Liste toutes les annonces
+    POST /api/listings/ - Créer une annonce
+    GET /api/listings/{id}/ - Détail d'une annonce
+    PUT /api/listings/{id}/ - Modifier une annonce
+    DELETE /api/listings/{id}/ - Supprimer une annonce
+    """
+    queryset = Listing.objects.filter(listing_status='active')
+    serializer_class = ListingSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ListingFilter
+    search_fields = ['listing_title', 'list_description']
+    ordering_fields = ['createdat', 'listing_price', 'views']
+    ordering = ['-createdat']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ListingDetailSerializer
+        return ListingSerializer
+
+    def perform_create(self, serializer):
+        """Créer une annonce et mettre à jour le statut vendeur"""
+        listing = serializer.save(userid=self.request.user)
+
+        # Marquer l'utilisateur comme vendeur
+        if not self.request.user.is_seller:
+            self.request.user.is_seller = True
+            self.request.user.save()
+
+        # Notification admin pour modération
+        create_notification(
+            user=get_admin_users().first(),
+            title='Nouvelle annonce à modérer',
+            message=f'Annonce "{listing.listing_title}" créée par {self.request.user.full_name}',
+            notif_type='listing',
+            link_url=f'/admin/listings/{listing.listing_id}/'
+        )
+
+    @action(detail=True, methods=['get'])
+    def similar(self, request, pk=None):
+        """Endpoint pour obtenir des annonces similaires"""
+        listing = self.get_object()
+        similar_listings = Listing.objects.filter(
+            cat_id=listing.cat_id,
+            listing_status='active'
+        ).exclude(
+            listing_id=listing.listing_id
+        )[:4]
+
+        serializer = self.get_serializer(similar_listings, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def increment_views(self, request, pk=None):
+        """Incrémenter le compteur de vues"""
+        listing = self.get_object()
+        listing.increment_views()
+        return Response({'views': listing.views})
+\end{lstlisting}
+
+\textbf{Filtres personnalisés:}
+
+\begin{lstlisting}[language=Python, caption=listings/filters.py]
+import django_filters
+from .models import Listing
+
+class ListingFilter(django_filters.FilterSet):
+    """Filtres avancés pour la recherche d'annonces"""
+
+    min_price = django_filters.NumberFilter(
+        field_name='listing_price',
+        lookup_expr='gte'
+    )
+    max_price = django_filters.NumberFilter(
+        field_name='listing_price',
+        lookup_expr='lte'
+    )
+    location = django_filters.CharFilter(
+        field_name='list_location',
+        lookup_expr='icontains'
+    )
+    category = django_filters.NumberFilter(field_name='cat_id')
+    is_featured = django_filters.BooleanFilter()
+
+    class Meta:
+        model = Listing
+        fields = ['min_price', 'max_price', 'location', 'category', 'is_featured']
+\end{lstlisting}
+
+\subsubsection{Module Paiements (payments/)}
+
+\textbf{Intégration Lumicash:}
+
+\begin{lstlisting}[language=Python, caption=payments/lumicash.py]
+import requests
+import uuid
+from django.conf import settings
+
+class LumicashAPI:
+    """Client pour l'API Lumicash (Mobile Money)"""
+
+    BASE_URL = "https://api.lumicash.bi/v1"
+
+    def __init__(self):
+        self.api_key = settings.LUMICASH_API_KEY
+        self.merchant_code = settings.LUMICASH_MERCHANT_CODE
+
+    def initiate_payment(self, amount, phone_number, reference):
+        """
+        Initier un paiement Mobile Money
+
+        Args:
+            amount (Decimal): Montant en BIF
+            phone_number (str): Numéro de téléphone client
+            reference (str): Référence unique de paiement
+
+        Returns:
+            dict: Réponse API avec transaction_id et payment_url
+        """
+        payload = {
+            'merchant_code': self.merchant_code,
+            'amount': str(amount),
+            'currency': 'BIF',
+            'phone_number': phone_number,
+            'reference': reference,
+            'callback_url': f"{settings.BACKEND_URL}/api/payments/callback/",
+            'return_url': f"{settings.FRONTEND_URL}/payments/success"
+        }
+
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.post(
+            f"{self.BASE_URL}/payments/initiate",
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+
+        response.raise_for_status()
+        return response.json()
+
+    def verify_payment(self, transaction_id):
+        """Vérifier le statut d'un paiement"""
+        headers = {
+            'Authorization': f'Bearer {self.api_key}'
+        }
+
+        response = requests.get(
+            f"{self.BASE_URL}/payments/{transaction_id}/status",
+            headers=headers,
+            timeout=30
+        )
+
+        response.raise_for_status()
+        return response.json()
+\end{lstlisting}
+
+\subsection{Captures d'écran ou extraits de code}
+
+\subsubsection{Configuration CORS pour frontend séparé}
+
+\begin{lstlisting}[language=Python, caption=umuhuza\_api/settings.py]
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite dev server
+    "http://127.0.0.1:5173",
+    "https://umuhuza.vercel.app",  # Production frontend
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+\end{lstlisting}
+
+\subsubsection{Authentification JWT}
+
+\begin{lstlisting}[language=Python, caption=Configuration JWT]
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+\end{lstlisting}
+
+\subsection{Détail des principales fonctionnalités implémentées}
+
+\subsubsection{Upload de fichiers avec optimisation d'images}
+
+\begin{lstlisting}[language=Python, caption=listings/views.py - Upload images]
+from rest_framework.parsers import MultiPartParser, FormParser
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
+@action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+def upload_image(self, request, pk=None):
+    """
+    Upload et optimisation d'une image pour une annonce
+    POST /api/listings/{id}/upload-image/
+    """
+    listing = self.get_object()
+
+    # Vérifier propriété
+    if listing.userid != request.user:
+        return Response(
+            {'error': 'You do not own this listing'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    # Vérifier nombre maximum d'images
+    if listing.images.count() >= 10:
+        return Response(
+            {'error': 'Maximum 10 images per listing'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    image_file = request.FILES.get('image')
+    if not image_file:
+        return Response(
+            {'error': 'No image provided'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Optimiser l'image
+    try:
+        img = Image.open(image_file)
+
+        # Redimensionner si trop grande (max 1920x1080)
+        if img.width > 1920 or img.height > 1080:
+            img.thumbnail((1920, 1080), Image.LANCZOS)
+
+        # Convertir en RGB si nécessaire
+        if img.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            img = background
+
+        # Sauvegarder en JPEG optimisé
+        output = BytesIO()
+        img.save(output, format='JPEG', quality=85, optimize=True)
+        output.seek(0)
+
+        # Créer un nouveau fichier uploadé
+        optimized_image = InMemoryUploadedFile(
+            output, 'ImageField',
+            f"{listing.listing_id}_{uuid.uuid4()}.jpg",
+            'image/jpeg',
+            output.getbuffer().nbytes, None
+        )
+
+        # Sauvegarder dans le modèle
+        listing_image = ListingImage.objects.create(
+            listing_id=listing,
+            image_url=optimized_image,
+            display_order=listing.images.count()
+        )
+
+        # Si première image, la définir comme principale
+        if listing.images.count() == 1:
+            listing_image.is_primary = True
+            listing_image.save()
+
+        return Response({
+            'message': 'Image uploaded successfully',
+            'image': ListingImageSerializer(listing_image).data
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response(
+            {'error': f'Failed to process image: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+\end{lstlisting}
+
+\subsubsection{Système de notification}
+
+\begin{lstlisting}[language=Python, caption=notifications/utils.py]
+from .models import Notification
+
+def create_notification(user, title, message, notif_type, link_url=None):
+    """
+    Créer une notification pour un utilisateur
+
+    Args:
+        user: Utilisateur cible
+        title: Titre de la notification
+        message: Message détaillé
+        notif_type: Type (system, chat, payment, listing, etc.)
+        link_url: URL optionnelle vers la ressource
+
+    Returns:
+        Notification: L'instance créée
+    """
+    notification = Notification.objects.create(
+        userid=user,
+        notif_title=title,
+        notif_message=message,
+        notif_type=notif_type,
+        link_url=link_url
+    )
+
+    # TODO: Envoyer push notification (WebSocket/FCM)
+    # TODO: Envoyer email si préférence utilisateur activée
+
+    return notification
+
+
+def notify_new_message(chat, sender, message_content):
+    """Notifier le destinataire d'un nouveau message"""
+    recipient = chat.userid_as_seller if sender == chat.userid else chat.userid
+
+    create_notification(
+        user=recipient,
+        title=f"Nouveau message de {sender.full_name}",
+        message=message_content[:100],
+        notif_type='chat',
+        link_url=f"/messages/{chat.chat_id}"
+    )
+
+
+def notify_listing_status_change(listing, new_status):
+    """Notifier le vendeur du changement de statut de son annonce"""
+    status_messages = {
+        'active': 'Votre annonce a été approuvée et est maintenant visible!',
+        'rejected': 'Votre annonce a été rejetée par notre équipe de modération.',
+        'expired': 'Votre annonce a expiré. Renouvelez-la pour la réactiver.',
+    }
+
+    create_notification(
+        user=listing.userid,
+        title=f"Statut de votre annonce: {new_status}",
+        message=status_messages.get(new_status, f"Statut changé: {new_status}"),
+        notif_type='listing',
+        link_url=f"/listings/{listing.listing_id}"
+    )
+\end{lstlisting}
+
+% FIN CHAPITRE 4
+\end{lstlisting}

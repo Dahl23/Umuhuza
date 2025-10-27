@@ -1,0 +1,280 @@
+@startuml diagramme_classes
+'================== COLORS ==================
+!define ENTITY_COLOR #E1F5FE
+!define ENUM_COLOR #FFF9C4
+
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor ENTITY_COLOR
+    BorderColor #0277BD
+    ArrowColor #0277BD
+    FontName Arial
+    FontSize 14
+    FontColor #0D47A1
+    StereotypeFontColor #006064
+}
+skinparam packageTitleFontSize 16
+
+'================== PACKAGE USERS ==================
+package "users" {
+    class Utilisateur <<Entité>> {
+        +userid: AutoField
+        +prenom: CharField
+        +nom: CharField
+        +email: EmailField
+        +telephone: CharField
+        +role_utilisateur: CharField
+        +est_vendeur: BooleanField
+        +est_concessionnaire: BooleanField
+        +photo_profil: CharField
+        +est_verifie: BooleanField
+        +est_actif: BooleanField
+        +email_verifie: BooleanField
+        +telephone_verifie: BooleanField
+        +date_inscription: DateTimeField
+        --
+        +nom_complet(): String
+        +roles(): List
+        +role_principal(): String
+    }
+
+    class CodeVerification <<Entité>> {
+        +code_id: AutoField
+        +userid: ForeignKey
+        +code: CharField
+        +type_code: CharField
+        +contact: CharField
+        +est_utilise: BooleanField
+        +expire_le: DateTimeField
+        +cree_le: DateTimeField
+        --
+        +est_valide(): Boolean
+    }
+
+    class BadgeUtilisateur <<Entité>> {
+        +badge_id: AutoField
+        +userid: ForeignKey
+        +type_badge: CharField
+        +attribue_le: DateTimeField
+        +expire_le: DateTimeField
+        --
+        +est_actif(): Boolean
+    }
+
+    class JournalActivite <<Entité>> {
+        +log_id: AutoField
+        +userid: ForeignKey
+        +type_action: CharField
+        +type_entite: CharField
+        +entite_id: IntegerField
+        +description: TextField
+        +ip_address: GenericIPAddressField
+        +cree_le: DateTimeField
+    }
+}
+
+'================== PACKAGE LISTINGS ==================
+package "listings" {
+    class Categorie <<Entité>> {
+        +cat_id: AutoField
+        +nom_categorie: CharField
+        +slug: SlugField
+        +description: TextField
+        +est_actif: BooleanField
+        +cree_le: DateTimeField
+    }
+
+    class PlanTarifaire <<Entité>> {
+        +tarif_id: AutoField
+        +nom_tarif: CharField
+        +description: TextField
+        +prix: DecimalField
+        +duree_jours: IntegerField
+        +categorie_scope: CharField
+        +max_listings: IntegerField
+        +max_images_par_listing: IntegerField
+        +est_en_avant: BooleanField
+        +cree_le: DateTimeField
+    }
+
+    class AbonnementUtilisateur <<Entité>> {
+        +abonnement_id: AutoField
+        +userid: ForeignKey
+        +tarif_id: ForeignKey
+        +statut_abonnement: CharField
+        +listings_utilises: IntegerField
+        +commence_le: DateTimeField
+        +expire_le: DateTimeField
+        +renouvellement_auto: BooleanField
+        --
+        +est_actif(): Boolean
+        +listings_restants(): Integer
+        +quota_disponible(): Boolean
+    }
+
+    class Annonce <<Entité>> {
+        +listing_id: AutoField
+        +userid: ForeignKey
+        +cat_id: ForeignKey
+        +titre_listing: CharField
+        +description_listing: TextField
+        +prix_listing: DecimalField
+        +localisation: CharField
+        +statut_listing: CharField
+        +vues: IntegerField
+        +est_en_avant: BooleanField
+        +date_expiration: DateTimeField
+        +cree_le: DateTimeField
+        --
+        +incrementer_vues(): void
+        +est_active(): Boolean
+    }
+
+    class ImageAnnonce <<Entité>> {
+        +image_id: AutoField
+        +listing_id: ForeignKey
+        +url_image: CharField
+        +est_primaire: BooleanField
+        +ordre_affichage: IntegerField
+        +telecharge_le: DateTimeField
+    }
+
+    class NotationAvis <<Entité>> {
+        +note_id: AutoField
+        +userid: ForeignKey
+        +userid_eval: ForeignKey
+        +listing_id: ForeignKey
+        +note: IntegerField
+        +commentaire: TextField
+        +est_visible: BooleanField
+        +cree_le: DateTimeField
+    }
+
+    class Favori <<Entité>> {
+        +fav_id: AutoField
+        +userid: ForeignKey
+        +listing_id: ForeignKey
+        +cree_le: DateTimeField
+    }
+
+    class Signalement <<Entité>> {
+        +signal_id: AutoField
+        +userid: ForeignKey
+        +userid_signale: ForeignKey
+        +listing_id: ForeignKey
+        +raison_signalement: TextField
+        +type_signalement: CharField
+        +statut_signalement: CharField
+        +notes_admin: TextField
+        +cree_le: DateTimeField
+    }
+}
+
+'================== PACKAGE MESSAGING ==================
+package "messaging" {
+    class Conversation <<Entité>> {
+        +chat_id: AutoField
+        +userid: ForeignKey
+        +listing_id: ForeignKey
+        +userid_vendeur: ForeignKey
+        +dernier_message_le: DateTimeField
+        +est_actif: BooleanField
+        +cree_le: DateTimeField
+    }
+
+    class Message <<Entité>> {
+        +message_id: AutoField
+        +userid: ForeignKey
+        +chat_id: ForeignKey
+        +contenu: TextField
+        +type_message: CharField
+        +url_fichier: CharField
+        +est_lu: BooleanField
+        +envoye_le: DateTimeField
+    }
+}
+
+'================== PACKAGE NOTIFICATIONS ==================
+package "notifications" {
+    class Notification <<Entité>> {
+        +notif_id: AutoField
+        +userid: ForeignKey
+        +titre: CharField
+        +message: TextField
+        +type_notif: CharField
+        +url_lien: CharField
+        +est_lu: BooleanField
+        +cree_le: DateTimeField
+    }
+}
+
+'================== PACKAGE PAYMENTS ==================
+package "payments" {
+    class Paiement <<Entité>> {
+        +payment_id: CharField
+        +userid: ForeignKey
+        +tarif_id: ForeignKey
+        +listing_id: ForeignKey
+        +montant: DecimalField
+        +methode_paiement: CharField
+        +statut_paiement: CharField
+        +ref_paiement: CharField
+        +transaction_id: CharField
+        +cree_le: DateTimeField
+    }
+
+    class CandidatureDealer <<Entité>> {
+        +dealerapp_id: AutoField
+        +userid: OneToOneField
+        +nom_entreprise: CharField
+        +type_entreprise: CharField
+        +adresse_entreprise: TextField
+        +telephone_entreprise: CharField
+        +email_entreprise: EmailField
+        +id_fiscal: CharField
+        +statut_candidature: CharField
+        +cree_le: DateTimeField
+    }
+
+    class DocumentDealer <<Entité>> {
+        +doc_id: AutoField
+        +dealerapp_id: ForeignKey
+        +type_doc: CharField
+        +url_fichier: CharField
+        +taille_fichier: IntegerField
+        +verifie: BooleanField
+        +telecharge_le: DateTimeField
+    }
+}
+
+'================== RELATIONS ==================
+Utilisateur "1" --> "0..*" CodeVerification : possède
+Utilisateur "1" --> "0..*" BadgeUtilisateur : obtient
+Utilisateur "1" --> "0..*" JournalActivite : génère
+Utilisateur "1" --> "0..*" Annonce : crée
+Utilisateur "1" --> "0..*" Favori : favorise
+Utilisateur "1" --> "0..*" NotationAvis : donne/reçoit
+Utilisateur "1" --> "0..*" Conversation : participe
+Utilisateur "1" --> "0..*" Message : envoie
+Utilisateur "1" --> "0..*" Notification : reçoit
+Utilisateur "1" --> "0..*" Paiement : effectue
+Utilisateur "1" --> "0..*" Signalement : soumet/reçoit
+Utilisateur "1" --> "0..1" CandidatureDealer : soumet
+Utilisateur "1" --> "0..*" AbonnementUtilisateur : a
+
+Categorie "1" --> "0..*" Annonce : catégorise
+Annonce "1" --> "0..*" ImageAnnonce : contient
+Annonce "1" --> "0..*" Favori : favorisée_par
+Annonce "1" --> "0..*" NotationAvis : évaluée_dans
+Annonce "1" --> "0..*" Conversation : discutée_dans
+Annonce "1" --> "0..*" Signalement : signalée_dans
+Annonce "1" --> "0..*" Paiement : payée_pour
+Annonce "1" --> "0..*" AbonnementUtilisateur : activée_par
+
+PlanTarifaire "1" --> "0..*" AbonnementUtilisateur : inclut
+PlanTarifaire "1" --> "0..*" Paiement : facturé_dans
+
+Conversation "1" --> "0..*" Message : contient
+CandidatureDealer "1" --> "0..*" DocumentDealer : inclut
+
+@enduml

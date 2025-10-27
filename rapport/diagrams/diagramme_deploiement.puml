@@ -1,0 +1,67 @@
+@startuml diagramme_deploiement
+
+node "Appareil Client" {
+    artifact "Navigateur Web" as browser {
+        component [Application React SPA] as spa
+    }
+}
+
+node "Serveur Frontend\n(Vercel/Netlify)" as frontend_server {
+    artifact "Assets Statiques" {
+        component [HTML/CSS/JS] as static
+        component [Images/Fonts] as assets
+    }
+}
+
+node "Serveur Backend\n(Railway/DigitalOcean)" as backend_server {
+    artifact "Serveur Application" {
+        component [Gunicorn] as gunicorn
+        component [Application Django] as django
+    }
+}
+
+database "Serveur PostgreSQL\n(Base Managée)" as db_server {
+    storage "Base de Données" {
+        artifact [DB umuhuza] as db
+    }
+}
+
+cloud "CDN\n(Cloudflare)" as cdn {
+    component [Cache Statique] as cache
+    component [Protection DDoS] as ddos
+}
+
+cloud "Stockage Objets\n(AWS S3/R2)" as object_storage {
+    folder [Uploads Utilisateurs] as uploads
+    folder [Images Annonces] as images
+    folder [Documents Dealers] as documents
+}
+
+node "Services Externes" {
+    component [SendGrid\nService Email] as email
+    component [Africa's Talking\nService SMS] as sms
+    component [Lumicash\nPasserelle Paiement] as payment
+}
+
+node "Monitoring & Logging" {
+    component [Sentry\nTracking Erreurs] as sentry
+    component [Google Analytics] as analytics
+}
+
+browser --> cdn : HTTPS
+cdn --> frontend_server : HTTPS
+cdn --> cache : Cache Hit
+
+browser --> backend_server : Requêtes API\nHTTPS/REST
+frontend_server --> backend_server : Appels API
+
+backend_server --> db_server : PostgreSQL\nPort 5432
+backend_server --> object_storage : S3 API\nHTTPS
+backend_server --> email : SMTP\nPort 587
+backend_server --> sms : REST API
+backend_server --> payment : REST API
+
+backend_server --> sentry : Rapports Erreurs
+browser --> analytics : Vues Pages
+
+@enduml

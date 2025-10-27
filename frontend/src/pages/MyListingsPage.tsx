@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listingsApi } from '../api/listings';
@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import {
   Plus, Edit, Trash2, Eye, MapPin, Calendar, TrendingUp,
-  Package, CheckCircle, Clock, XCircle, Star
+  Package, CheckCircle, Clock, XCircle, Star, MoreVertical
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -19,6 +19,16 @@ export default function MyListingsPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedListingId, setSelectedListingId] = useState<number | null>(null);
+  const [statusMenuOpen, setStatusMenuOpen] = useState<number | null>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setStatusMenuOpen(null);
+    if (statusMenuOpen !== null) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [statusMenuOpen]);
 
   // Fetch user's listings
   const { data: listings, isLoading } = useQuery({
@@ -37,6 +47,21 @@ export default function MyListingsPage() {
     onError: () => {
       toast.error('Failed to delete listing');
       setDeletingId(null);
+    },
+  });
+
+  // Status update mutation
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: 'active' | 'sold' | 'hidden' }) =>
+      listingsApi.updateStatus(id, status),
+    onSuccess: (_, variables) => {
+      const statusLabels = { active: 'active', sold: 'sold', hidden: 'hidden' };
+      toast.success(`Listing marked as ${statusLabels[variables.status]}`);
+      queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+      setStatusMenuOpen(null);
+    },
+    onError: () => {
+      toast.error('Failed to update listing status');
     },
   });
 
@@ -288,14 +313,54 @@ export default function MyListingsPage() {
                               <Star className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="outline"
-                            onClick={() => handleDelete(listing.listing_id, listing.listing_title)}
-                            disabled={deletingId === listing.listing_id}
-                            title="Delete Listing"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </Button>
+
+                          {/* Status Change Dropdown */}
+                          <div className="relative">
+                            <Button
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setStatusMenuOpen(statusMenuOpen === listing.listing_id ? null : listing.listing_id);
+                              }}
+                              title="Change Status"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                            {statusMenuOpen === listing.listing_id && (
+                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                <div className="py-1">
+                                  <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Change Status</p>
+                                  {listing.listing_status !== 'sold' && (
+                                    <button
+                                      onClick={() => statusMutation.mutate({ id: listing.listing_id, status: 'sold' })}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                    >
+                                      <CheckCircle className="w-4 h-4 text-blue-600" />
+                                      Mark as Sold
+                                    </button>
+                                  )}
+                                  {listing.listing_status !== 'hidden' && (
+                                    <button
+                                      onClick={() => statusMutation.mutate({ id: listing.listing_id, status: 'hidden' })}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                    >
+                                      <XCircle className="w-4 h-4 text-gray-600" />
+                                      Mark as Hidden
+                                    </button>
+                                  )}
+                                  <div className="border-t border-gray-200 my-1"></div>
+                                  <button
+                                    onClick={() => handleDelete(listing.listing_id, listing.listing_title)}
+                                    disabled={deletingId === listing.listing_id}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete Listing
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

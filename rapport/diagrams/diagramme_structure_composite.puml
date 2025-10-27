@@ -1,0 +1,79 @@
+@startuml diagramme_structure_composite
+title Diagramme de Structure Composite - Système d'Annonce
+
+component "SystèmeAnnonce" {
+
+    component "GestionAnnonce" {
+        port "API REST" as api_port
+
+        component "ValidateurDonnées" {
+            [Validation Titre]
+            [Validation Prix]
+            [Validation Localisation]
+        }
+
+        component "GestionnaireImages" {
+            [Optimiseur Images]
+            [Stockage S3]
+            [Générateur Miniatures]
+        }
+
+        component "VérificateurAbonnement" {
+            [Vérif Quota]
+            [Vérif Expiration]
+            [Calcul Remaining]
+        }
+
+        component "ActivateurAutomatique" <<Clé>> {
+            [Définir Statut Active]
+            [Calculer Date Expiration]
+            [Incrémenter Usage]
+        }
+    }
+
+    component "GestionUtilisateur" {
+        [Authentification JWT]
+        [Vérification Email]
+        [Gestion Rôles]
+    }
+
+    component "GestionFichiers" {
+        [Upload]
+        [Compression]
+        [Validation Type]
+    }
+
+    component "BaseDonnées" {
+        database "PostgreSQL" as db
+    }
+}
+
+api_port --> ValidateurDonnées : "valide données"
+ValidateurDonnées --> VérificateurAbonnement : "vérifie quota"
+VérificateurAbonnement --> ActivateurAutomatique : "si OK, active"
+ActivateurAutomatique --> db : "UPDATE status='active'"
+GestionnaireImages --> GestionFichiers : "utilise"
+GestionFichiers --> db : "sauvegarde URLs"
+
+GestionUtilisateur --> GestionAnnonce : "authentifie"
+
+note right of ActivateurAutomatique
+  Composant clé du système!
+  Active automatiquement
+  les annonces après création
+  sans intervention humaine.
+
+  Code: views.py ligne 148
+end note
+
+note bottom of VérificateurAbonnement
+  Vérifie:
+  1. Abonnement actif?
+  2. Quota disponible?
+  3. Pas expiré?
+
+  Si OK → activation automatique
+  Si KO → erreur 403
+end note
+
+@enduml

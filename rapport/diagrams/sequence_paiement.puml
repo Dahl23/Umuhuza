@@ -1,0 +1,61 @@
+@startuml sequence_paiement
+autonumber
+
+actor "Utilisateur" as user
+participant "Frontend" as frontend
+participant "Backend API" as backend
+database "PostgreSQL" as db
+participant "Lumicash" as gateway
+participant "Service\nNotification" as notif
+
+user -> frontend: Sélectionne plan premium
+frontend -> backend: GET /api/pricing-plans/
+backend -> db: SELECT * FROM PRICING_PLANS
+db --> backend: plans[]
+backend --> frontend: 200 OK {plans}
+
+user -> frontend: Choisit "Premium Plan"
+frontend -> backend: POST /api/payments/initiate/\n{pricing_id: 2, listing_id: 123}
+
+backend -> backend: Génère payment_id unique
+backend -> db: INSERT INTO PAYMENTS\n(status='pending')
+db --> backend: OK
+
+backend -> gateway: Initiate payment\n{amount, reference}
+gateway --> backend: {payment_url, transaction_id}
+
+backend -> db: UPDATE PAYMENTS\nSET transaction_id=...
+db --> backend: OK
+
+backend --> frontend: 200 OK {payment_url}
+frontend --> user: Redirige vers Lumicash
+
+user -> gateway: Complète paiement\n(Mobile Money)
+gateway -> gateway: Traite paiement
+
+gateway -> backend: POST /api/payments/callback/\n{transaction_id, status}
+
+alt Paiement réussi
+    backend -> db: UPDATE PAYMENTS\nSET status='successful'
+    db --> backend: OK
+
+    backend -> db: UPDATE LISTINGS\nSET is_featured=True
+    db --> backend: OK
+
+    backend -> db: INSERT INTO USER_SUBSCRIPTIONS
+    db --> backend: OK
+
+    backend -> notif: Notification succès
+    notif -> db: INSERT INTO NOTIFICATIONS
+
+    backend --> gateway: 200 OK
+    gateway --> user: Paiement confirmé ✓
+
+else Paiement échoué
+    backend -> db: UPDATE PAYMENTS\nSET status='failed'
+    backend -> notif: Notification échec
+    backend --> gateway: 200 OK
+    gateway --> user: Paiement échoué ✗
+end
+
+@enduml

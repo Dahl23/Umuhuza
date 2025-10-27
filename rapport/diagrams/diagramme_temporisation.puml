@@ -1,0 +1,49 @@
+@startuml diagramme_temporisation
+title Diagramme de Temporisation - Cycle de Vie Annonce
+
+concise "Annonce" as listing
+concise "Abonnement" as subscription
+concise "Système" as system
+
+@0
+listing is Brouillon
+subscription is Actif
+system is EnAttente
+
+@5
+listing is Active
+note bottom: Activation AUTO immédiate\naprès soumission formulaire
+
+@10
+system is SurveillanceExpiration
+note bottom: Cron vérifie expiration_date
+
+@30
+listing is Active
+subscription is Actif
+note bottom: Annonce toujours active\nsi avant expiration_date
+
+@60
+subscription is Expiré
+note bottom: expiration_date atteinte
+
+@61
+system is TraitementExpiration
+listing is Expiree
+note bottom: Système marque comme expirée
+
+@90
+system is NettoyageAuto
+note bottom: 30 jours après expiration
+
+@91
+listing is Supprimee
+note bottom: Auto-suppression\nsi pas renouvelée
+
+highlight 0 to 5 #LightGreen : Création
+highlight 5 to 60 #LightBlue : Période Active
+highlight 60 to 61 #Orange : Expiration
+highlight 61 to 90 #Yellow : Grâce 30j
+highlight 90 to 91 #Red : Suppression
+
+@enduml

@@ -8,10 +8,13 @@ import ReviewsList from '../components/reviews/ReviewsList';
 import {
   Mail, Phone, Calendar, Shield, Edit, LogOut,
   CheckCircle, XCircle,
-  Heart, Building2
+  Heart, Building2,
+  Star,
+  Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import Avatar from '../components/common/Avatar';
 
 export default function ProfilePage() {
   const navigate = useNavigate();

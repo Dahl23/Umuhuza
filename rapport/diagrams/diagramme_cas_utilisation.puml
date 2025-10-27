@@ -1,0 +1,118 @@
+@startuml diagramme_cas_utilisation
+left to right direction
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Visiteur" as visitor
+actor "Acheteur" as buyer
+actor "Vendeur" as seller
+actor "Dealer" as dealer
+actor "Administrateur" as admin
+
+buyer -up-|> visitor
+seller -up-|> buyer
+dealer -up-|> seller
+
+package "Système Umuhuza" {
+
+    package "Fonctionnalités Publiques" {
+        usecase "Consulter annonces" as UC1
+        usecase "Rechercher annonces" as UC2
+        usecase "Filtrer par catégorie" as UC3
+        usecase "Filtrer par prix" as UC4
+        usecase "Voir détails annonce" as UC5
+        usecase "S'inscrire" as UC6
+        usecase "Se connecter" as UC7
+    }
+
+    package "Fonctionnalités Acheteur" {
+        usecase "Contacter vendeur" as UC10
+        usecase "Ajouter aux favoris" as UC11
+        usecase "Envoyer message" as UC12
+        usecase "Noter vendeur" as UC13
+        usecase "Signaler annonce" as UC14
+        usecase "Gérer profil" as UC15
+        usecase "Vérifier email/téléphone" as UC16
+    }
+
+    package "Fonctionnalités Vendeur" {
+        usecase "Créer annonce" as UC20
+        usecase "Modifier annonce" as UC21
+        usecase "Supprimer annonce" as UC22
+        usecase "Télécharger photos" as UC23
+        usecase "Gérer ses annonces" as UC24
+        usecase "Consulter statistiques" as UC25
+        usecase "Marquer comme vendu" as UC26
+        usecase "Acheter plan premium" as UC27
+    }
+
+    package "Fonctionnalités Dealer" {
+        usecase "Soumettre candidature" as UC30
+        usecase "Télécharger documents" as UC31
+        usecase "Créer annonces illimitées" as UC32
+        usecase "Accéder dashboard" as UC33
+        usecase "Gérer abonnement" as UC34
+    }
+
+    package "Fonctionnalités Admin" {
+        usecase "Gérer utilisateurs" as UC40
+        usecase "Traiter signalements" as UC41
+        usecase "Approuver dealers" as UC42
+        usecase "Gérer catégories" as UC43
+        usecase "Gérer plans tarifaires" as UC44
+        usecase "Consulter logs" as UC45
+    }
+}
+
+' VISITEUR
+visitor --> UC1
+visitor --> UC2
+visitor --> UC3
+visitor --> UC4
+visitor --> UC5
+visitor --> UC6
+visitor --> UC7
+
+' ACHETEUR
+buyer --> UC10
+buyer --> UC11
+buyer --> UC12
+buyer --> UC13
+buyer --> UC14
+buyer --> UC15
+buyer --> UC16
+
+' VENDEUR
+seller --> UC20
+seller --> UC21
+seller --> UC22
+seller --> UC23
+seller --> UC24
+seller --> UC25
+seller --> UC26
+seller --> UC27
+
+' DEALER
+dealer --> UC30
+dealer --> UC31
+dealer --> UC32
+dealer --> UC33
+dealer --> UC34
+
+' ADMIN
+admin --> UC40
+admin --> UC41
+admin --> UC42
+admin --> UC43
+admin --> UC44
+admin --> UC45
+
+' RELATIONS include/extend
+UC20 ..> UC16 : <<require>>
+UC27 ..> UC16 : <<require>>
+UC30 ..> UC16 : <<require>>
+UC10 ..> UC7 : <<require>>
+UC12 ..> UC10 : <<include>>
+
+@enduml

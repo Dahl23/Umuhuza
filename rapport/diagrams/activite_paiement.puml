@@ -1,0 +1,56 @@
+@startuml activite_paiement
+start
+
+:Utilisateur choisit plan premium;
+
+:Système affiche détails plan;
+
+:Utilisateur clique "Acheter";
+
+if (Utilisateur connecté?) then (non)
+    :Redirige vers login;
+    stop
+else (oui)
+endif
+
+:Système génère payment_id;
+:Crée PAYMENT (status='pending');
+
+:Intègre Lumicash;
+:Génère URL paiement;
+:Redirige vers Lumicash;
+
+:Utilisateur entre\ninformations paiement;
+
+partition "Traitement Lumicash" {
+    if (Paiement accepté?) then (oui)
+        :Lumicash traite transaction;
+        :Callback backend;
+    else (non)
+        :Callback échec;
+        :UPDATE status='failed';
+        :Notification échec;
+        stop
+    endif
+}
+
+:Backend reçoit callback succès;
+
+fork
+    :UPDATE PAYMENT status='successful';
+fork again
+    :UPDATE LISTING is_featured=True;
+fork again
+    :CREATE USER_SUBSCRIPTION;
+fork again
+    :Notification succès;
+fork again
+    :Log "PAYMENT_COMPLETED";
+end fork
+
+:Redirige vers annonce;
+:Affiche badge "Featured";
+
+stop
+
+@enduml

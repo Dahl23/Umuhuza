@@ -1,0 +1,56 @@
+@startuml architecture_composants
+!include <C4/C4_Component>
+
+LAYOUT_WITH_LEGEND()
+
+Container_Boundary(frontend, "Couche Frontend") {
+    Component(react_app, "Application React", "React 18, Vite", "Interface utilisateur SPA")
+    Component(router, "React Router", "react-router-dom", "Navigation et routing")
+    Component(state, "Gestion État", "Context API", "État global application")
+    Component(api_client, "Client API", "Axios", "Communication avec backend")
+}
+
+Container_Boundary(backend, "Couche Backend") {
+    Component(django, "Django Core", "Django 5.2", "Framework web principal")
+    Component(drf, "Django REST Framework", "DRF 3.16", "API REST")
+    Component(jwt_auth, "Authentification JWT", "SimpleJWT", "Authentification")
+    Component(cors, "CORS Headers", "django-cors-headers", "Sécurité cross-origin")
+    Component(imagekit, "Traitement Images", "django-imagekit", "Optimisation images")
+}
+
+Container_Boundary(apps, "Applications Django") {
+    Component(users_app, "App Users", "Django App", "Gestion utilisateurs")
+    Component(listings_app, "App Listings", "Django App", "Gestion annonces")
+    Component(messaging_app, "App Messaging", "Django App", "Messagerie")
+    Component(payments_app, "App Payments", "Django App", "Paiements")
+    Component(notif_app, "App Notifications", "Django App", "Notifications")
+}
+
+ContainerDb(database, "PostgreSQL", "PostgreSQL 15+", "Base de données relationnelle")
+Container(storage, "Stockage Fichiers", "Local/S3", "Images et documents")
+Container_Ext(email, "Service Email", "SMTP/SendGrid", "Envoi emails")
+Container_Ext(sms, "Service SMS", "Africa's Talking", "Envoi SMS")
+Container_Ext(payment_gw, "Passerelle Paiement", "Lumicash", "Traitement paiements")
+
+Rel(react_app, api_client, "Utilise")
+Rel(api_client, drf, "Requêtes HTTP/JSON", "REST API")
+Rel(drf, django, "Construit sur")
+Rel(drf, jwt_auth, "Utilise")
+Rel(django, users_app, "Inclut")
+Rel(django, listings_app, "Inclut")
+Rel(django, messaging_app, "Inclut")
+Rel(django, payments_app, "Inclut")
+Rel(django, notif_app, "Inclut")
+
+Rel(users_app, database, "Lit/Écrit")
+Rel(listings_app, database, "Lit/Écrit")
+Rel(messaging_app, database, "Lit/Écrit")
+Rel(payments_app, database, "Lit/Écrit")
+Rel(notif_app, database, "Lit/Écrit")
+
+Rel(listings_app, storage, "Upload/Download")
+Rel(users_app, email, "Envoie")
+Rel(users_app, sms, "Envoie")
+Rel(payments_app, payment_gw, "Intègre")
+
+@enduml

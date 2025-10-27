@@ -9,34 +9,48 @@ from .models import User
 @receiver(post_save, sender=User)
 def assign_free_tier_to_new_user(sender, instance, created, **kwargs):
     """
-    Automatically assign free tier subscription when a new user is created
+    Automatically assign Basic Plan subscription when user becomes verified
     """
     # Import here to avoid circular import
     from listings.models import PricingPlan, UserSubscription
 
-    if created and not instance.is_superuser:
-        # Get the free tier pricing plan (pricing_name='Free Tier' or plan_price=0)
-        try:
-            free_tier = PricingPlan.objects.filter(
-                pricing_name='Free Tier',
-                plan_price=0,
-                is_active=True
-            ).first()
+    # Only create subscription when user becomes verified (not just created)
+    if instance.is_verified and not instance.is_superuser:
+        # Check if user already has an active subscription
+        existing_subscription = UserSubscription.objects.filter(
+            userid=instance,
+            subscription_status='active'
+        ).exists()
 
-            if free_tier:
-                # Create subscription for the user
-                starts_at = timezone.now()
-                expires_at = starts_at + timedelta(days=free_tier.duration_days)
+        if not existing_subscription:
+            try:
+                # Get or create Basic plan (plan_price = 0)
+                basic_plan, _ = PricingPlan.objects.get_or_create(
+                    plan_price=0,
+                    defaults={
+                        'pricing_name': 'Basic Plan',
+                        'pricing_description': 'Perfect for occasional sellers',
+                        'duration_days': 60,
+                        'category_scope': 'all',
+                        'max_listings': 1,
+                        'max_images_per_listing': 5,
+                        'is_featured': False,
+                        'is_active': True,
+                    }
+                )
 
+                # Create subscription - Basic plan never expires
                 UserSubscription.objects.create(
                     userid=instance,
-                    pricing_id=free_tier,
+                    pricing_id=basic_plan,
                     subscription_status='active',
-                    starts_at=starts_at,
-                    expires_at=expires_at,
+                    starts_at=timezone.now(),
+                    expires_at=None,  # Basic plan never expires
                     listings_used=0,
                     auto_renew=False
                 )
-        except Exception as e:
-            # Log the error but don't fail user creation
-            print(f"Failed to assign free tier to user {instance.userid}: {e}")
+
+                print(f"✓ Created Basic subscription for user: {instance.email}")
+            except Exception as e:
+                # Log the error but don't fail user creation
+                print(f"Failed to assign Basic Plan to user {instance.userid}: {e}")

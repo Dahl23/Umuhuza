@@ -1,0 +1,97 @@
+@startuml diagramme_objets
+title Diagramme d'Objets - Instances Concrètes
+
+object "utilisateur1 : Utilisateur" as user1 {
+    userid = 1
+    email = "john@example.com"
+    user_firstname = "John"
+    user_lastname = "Doe"
+    is_seller = True
+    is_verified = True
+    date_joined = "2025-01-15"
+}
+
+object "abonnement1 : AbonnementUtilisateur" as sub1 {
+    subscription_id = 5
+    subscription_status = "active"
+    listings_used = 2
+    starts_at = "2025-01-20"
+    expires_at = "2025-02-19"
+}
+
+object "planPremium : PlanTarifaire" as plan1 {
+    pricing_id = 2
+    pricing_name = "Plan Premium"
+    plan_price = 10000
+    duration_days = 30
+    max_listings = 5
+    is_featured = True
+}
+
+object "annonce1 : Annonce" as listing1 {
+    listing_id = 123
+    listing_title = "Villa moderne à Bujumbura"
+    listing_price = 150000000
+    listing_status = "active"
+    is_featured = True
+    views = 245
+    createdat = "2025-01-25"
+}
+
+object "categorie1 : Categorie" as cat1 {
+    cat_id = 1
+    cat_name = "Real Estate - Houses"
+    slug = "real-estate-houses"
+}
+
+object "image1 : ImageAnnonce" as img1 {
+    listimage_id = 1
+    image_url = "/media/listings/123/photo1.jpg"
+    is_primary = True
+    display_order = 0
+}
+
+object "image2 : ImageAnnonce" as img2 {
+    listimage_id = 2
+    image_url = "/media/listings/123/photo2.jpg"
+    is_primary = False
+    display_order = 1
+}
+
+object "favori1 : Favori" as fav1 {
+    fav_id = 10
+    createdat = "2025-01-26"
+}
+
+object "acheteur1 : Utilisateur" as buyer1 {
+    userid = 2
+    email = "marie@example.com"
+    user_firstname = "Marie"
+    user_lastname = "Martin"
+}
+
+' Relations
+user1 -- sub1 : "possède"
+sub1 -- plan1 : "utilise"
+user1 -- listing1 : "a créé"
+listing1 -- cat1 : "appartient à"
+listing1 -- img1 : "contient"
+listing1 -- img2 : "contient"
+buyer1 -- fav1 : "a favorisé"
+fav1 -- listing1 : "pointe vers"
+
+note right of listing1
+  Annonce activée automatiquement
+  lors de la création grâce à
+  l'abonnement actif du vendeur.
+
+  Pas d'approbation admin requise!
+end note
+
+note bottom of sub1
+  L'utilisateur a utilisé 2 sur 5
+  annonces disponibles dans son
+  plan Premium actif.
+end note
+
+@enduml

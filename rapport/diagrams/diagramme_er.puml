@@ -1,0 +1,166 @@
+@startuml diagramme_er
+!define ENTITY_COLOR #E8F5E9
+
+skinparam entity {
+    BackgroundColor ENTITY_COLOR
+    BorderColor #2E7D32
+}
+
+entity "USERS" as user {
+    * USERID : INTEGER <<PK>>
+    --
+    * USER_EMAIL : VARCHAR(255) <<UNIQUE>>
+    * USER_FIRSTNAME : VARCHAR(255)
+    * USER_LASTNAME : VARCHAR(255)
+    * PHONE_NUMBER : VARCHAR(20)
+    USER_ROLE : VARCHAR(10)
+    IS_SELLER : BOOLEAN
+    IS_DEALER : BOOLEAN
+    IS_VERIFIED : BOOLEAN
+    EMAIL_VERIFIED : BOOLEAN
+    DATE_JOINED : TIMESTAMP
+}
+
+entity "LISTINGS" as listing {
+    * LISTING_ID : INTEGER <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * CAT_ID : INTEGER <<FK>>
+    * LISTING_TITLE : VARCHAR(255)
+    * LIST_DESCRIPTION : TEXT
+    * LISTING_PRICE : DECIMAL(15,2)
+    * LIST_LOCATION : VARCHAR(255)
+    LISTING_STATUS : VARCHAR(10)
+    IS_FEATURED : BOOLEAN
+    VIEWS : INTEGER
+    EXPIRATION_DATE : TIMESTAMP
+    CREATEDAT : TIMESTAMP
+}
+
+entity "CATEGORIES" as category {
+    * CAT_ID : INTEGER <<PK>>
+    --
+    * CAT_NAME : VARCHAR(255)
+    * SLUG : VARCHAR(255) <<UNIQUE>>
+    CAT_DESCRIPTION : TEXT
+    IS_ACTIVE : BOOLEAN
+}
+
+entity "LISTING_IMAGES" as image {
+    * LISTIMAGE_ID : INTEGER <<PK>>
+    --
+    * LISTING_ID : INTEGER <<FK>>
+    * IMAGE_URL : VARCHAR(255)
+    IS_PRIMARY : BOOLEAN
+    DISPLAY_ORDER : INTEGER
+}
+
+entity "PRICING_PLANS" as pricing {
+    * PRICING_ID : INTEGER <<PK>>
+    --
+    * PRICING_NAME : VARCHAR(255)
+    * PLAN_PRICE : DECIMAL(12,2)
+    * DURATION_DAYS : INTEGER
+    MAX_LISTINGS : INTEGER
+    MAX_IMAGES_PER_LISTING : INTEGER
+    IS_FEATURED : BOOLEAN
+}
+
+entity "USER_SUBSCRIPTIONS" as subscription {
+    * SUBSCRIPTION_ID : INTEGER <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * PRICING_ID : INTEGER <<FK>>
+    SUBSCRIPTION_STATUS : VARCHAR(10)
+    LISTINGS_USED : INTEGER
+    STARTS_AT : TIMESTAMP
+    EXPIRES_AT : TIMESTAMP
+}
+
+entity "CHATS" as chat {
+    * CHAT_ID : INTEGER <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * LISTING_ID : INTEGER <<FK>>
+    * USERID_AS_SELLER : INTEGER <<FK>>
+    LAST_MESSAGE_AT : TIMESTAMP
+    IS_ACTIVE : BOOLEAN
+}
+
+entity "MESSAGES" as message {
+    * MESSAGE_ID : INTEGER <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * CHAT_ID : INTEGER <<FK>>
+    * CONTENT : TEXT
+    MESSAGE_TYPE : VARCHAR(10)
+    IS_READ : BOOLEAN
+    SENTAT : TIMESTAMP
+}
+
+entity "PAYMENTS" as payment {
+    * PAYMENT_ID : VARCHAR(64) <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * PRICING_ID : INTEGER <<FK>>
+    LISTING_ID : INTEGER <<FK>>
+    * PAYMENT_AMOUNT : DECIMAL(10,2)
+    PAYMENT_STATUS : VARCHAR(20)
+    * PAYMENT_REF : VARCHAR(255) <<UNIQUE>>
+}
+
+entity "NOTIFICATIONS" as notif {
+    * NOTIF_ID : INTEGER <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * NOTIF_TITLE : VARCHAR(255)
+    * NOTIF_MESSAGE : TEXT
+    NOTIF_TYPE : VARCHAR(20)
+    IS_READ : BOOLEAN
+}
+
+entity "FAVORITES" as favorite {
+    * FAV_ID : INTEGER <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * LISTING_ID : INTEGER <<FK>>
+    CREATEDAT : TIMESTAMP
+}
+
+entity "RATINGS_N_REVIEWS" as review {
+    * RATINGREV_ID : INTEGER <<PK>>
+    --
+    * USERID : INTEGER <<FK>>
+    * REVIEWED_USERID : INTEGER <<FK>>
+    LISTING_ID : INTEGER <<FK>>
+    * RATING : INTEGER
+    COMMENT : TEXT
+}
+
+' ========== RELATIONS ==========
+
+user ||--o{ listing : "crée"
+user ||--o{ subscription : "souscrit"
+user ||--o{ favorite : "favoritise"
+user ||--o{ review : "donne/reçoit"
+user ||--o{ chat : "participe"
+user ||--o{ message : "envoie"
+user ||--o{ notif : "reçoit"
+user ||--o{ payment : "effectue"
+
+category ||--o{ listing : "catégorise"
+listing ||--o{ image : "possède"
+listing ||--o{ favorite : "favorisée_dans"
+listing ||--o{ review : "évaluée_dans"
+listing ||--o{ chat : "discutée_dans"
+
+pricing ||--o{ subscription : "utilisé_dans"
+pricing ||--o{ payment : "facturé_dans"
+
+subscription }o--|| user : "appartient_à"
+subscription }o--|| pricing : "utilise"
+
+chat }o--|| listing : "concerne"
+chat ||--o{ message : "contient"
+
+@enduml

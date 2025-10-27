@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
-    Payment, 
+    Payment,
     DealerApplication, DealerDocument
 )
+from listings.models import PricingPlan
 
 User = get_user_model()
 
@@ -11,12 +12,22 @@ User = get_user_model()
 # PAYMENT SERIALIZERS
 # ============================================================================
 
+class PricingPlanNestedSerializer(serializers.ModelSerializer):
+    """Nested serializer for pricing plan in payment responses"""
+    class Meta:
+        model = PricingPlan
+        fields = ['pricing_id', 'pricing_name', 'pricing_description', 'plan_price', 'duration_days']
+
+
 class PaymentSerializer(serializers.ModelSerializer):
+    pricing_id = PricingPlanNestedSerializer(read_only=True)
+
     class Meta:
         model = Payment
         fields = [
-            'payment_id', 'payment_amount', 'payment_method',
-            'payment_status', 'payment_ref', 'createdat', 'confirmed_at'
+            'payment_id', 'userid', 'pricing_id', 'listing_id',
+            'payment_amount', 'payment_method', 'payment_status',
+            'payment_ref', 'transaction_id', 'createdat', 'confirmed_at'
         ]
         read_only_fields = ['payment_id', 'payment_status', 'createdat', 'confirmed_at']
 

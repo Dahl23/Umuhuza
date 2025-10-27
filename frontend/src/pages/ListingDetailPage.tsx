@@ -248,7 +248,7 @@ export default function ListingDetailPage() {
               {/* Description */}
               <div className="prose max-w-none">
                 <h2 className="text-xl font-semibold mb-3">Description</h2>
-                <p className="text-gray-700 whitespace-pre-line">
+                <p className="text-gray-700 whitespace-pre-line break-words overflow-wrap-anywhere">
                   {listing.list_description}
                 </p>
               </div>

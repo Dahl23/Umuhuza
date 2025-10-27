@@ -1,0 +1,127 @@
+@startuml diagramme_packages
+!define PACKAGE_COLOR #E3F2FD
+!define APP_COLOR #FFF9C4
+
+skinparam package {
+    BackgroundColor PACKAGE_COLOR
+    BorderColor #1976D2
+    FontStyle bold
+}
+
+package "backend" {
+
+    package "umuhuza_api" <<Configuration>> #FFFFFF {
+        [settings.py]
+        [urls.py]
+        [wsgi.py]
+        [middleware.py]
+    }
+
+    package "users" <<App Django>> #APP_COLOR {
+        [models.py]
+        [views.py]
+        [serializers.py]
+        [urls.py]
+        [admin.py]
+        [utils.py]
+    }
+
+    package "listings" <<App Django>> #APP_COLOR {
+        [models.py]
+        [views.py]
+        [serializers.py]
+        [urls.py]
+        [filters.py]
+        [admin.py]
+    }
+
+    package "messaging" <<App Django>> #APP_COLOR {
+        [models.py]
+        [views.py]
+        [serializers.py]
+        [urls.py]
+        [admin.py]
+    }
+
+    package "notifications" <<App Django>> #APP_COLOR {
+        [models.py]
+        [views.py]
+        [serializers.py]
+        [urls.py]
+        [utils.py]
+    }
+
+    package "payments" <<App Django>> #APP_COLOR {
+        [models.py]
+        [views.py]
+        [serializers.py]
+        [urls.py]
+        [lumicash.py]
+    }
+
+    package "media" <<Stockage>> #E8F5E9 {
+        folder "listings/"
+        folder "profiles/"
+        folder "documents/"
+    }
+}
+
+package "frontend" {
+    package "src" {
+        package "components" {
+            folder "common/"
+            folder "layout/"
+            folder "listings/"
+            folder "auth/"
+        }
+
+        package "pages" {
+            [HomePage.tsx]
+            [ListingsPage.tsx]
+            [ProfilePage.tsx]
+        }
+
+        package "services" {
+            [api.ts]
+            [authService.ts]
+            [listingsService.ts]
+        }
+
+        package "context" {
+            [AuthContext.tsx]
+            [NotificationContext.tsx]
+        }
+    }
+}
+
+' Dépendances
+umuhuza_api ..> users : "inclut"
+umuhuza_api ..> listings : "inclut"
+umuhuza_api ..> messaging : "inclut"
+umuhuza_api ..> notifications : "inclut"
+umuhuza_api ..> payments : "inclut"
+
+listings ..> users : "dépend de"
+messaging ..> users : "dépend de"
+messaging ..> listings : "dépend de"
+notifications ..> users : "dépend de"
+payments ..> users : "dépend de"
+payments ..> listings : "dépend de"
+
+listings ..> media : "utilise"
+
+frontend ..> backend : "consomme API REST"
+
+note right of umuhuza_api
+  Package racine Django
+  Configuration globale
+  Routing principal
+end note
+
+note bottom of listings
+  Package le plus important
+  Gestion complète des annonces
+  avec abonnements et activation auto
+end note
+
+@enduml

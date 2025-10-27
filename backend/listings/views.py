@@ -108,16 +108,65 @@ def listing_create(request):
         list_location: "Bujumbura, Rohero"
         images: [file1, file2, ...]  (multiple files)
     """
+    # STEP 1: Check if user is verified
+    if not request.user.is_verified:
+        return Response({
+            'error': 'You must verify your email and phone before creating listings',
+            'verification_required': True
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    # STEP 2: Check subscription quota
+    active_subscription = UserSubscription.objects.filter(
+        userid=request.user,
+        subscription_status='active'
+    ).select_related('pricing_id').first()
+
+    if not active_subscription:
+        return Response({
+            'error': 'No active subscription found. Please contact support.',
+            'needs_subscription': True
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    # Check if user has quota available
+    if not active_subscription.has_quota:
+        return Response({
+            'error': f'You have reached your listing limit ({active_subscription.pricing_id.max_listings} listings). Upgrade your plan to create more listings.',
+            'quota_exceeded': True,
+            'current_plan': active_subscription.pricing_id.pricing_name,
+            'max_listings': active_subscription.pricing_id.max_listings,
+            'listings_used': active_subscription.listings_used
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    # STEP 3: Validate and create listing
     serializer = ListingCreateSerializer(data=request.data)
 
     if serializer.is_valid():
+        # Create listing with status='pending' initially
         listing = serializer.save(userid=request.user)
+
+        # STEP 4: Automatically activate listing and set expiration
+        listing.listing_status = 'active'
+        listing.expiration_date = timezone.now() + timedelta(days=active_subscription.pricing_id.duration_days)
+        listing.save(update_fields=['listing_status', 'expiration_date', 'updatedat'])
+
+        # STEP 5: Increment subscription usage
+        active_subscription.listings_used += 1
+        active_subscription.save(update_fields=['listings_used', 'updatedat'])
+
+        # STEP 6: Set is_seller flag if first listing
+        if not request.user.is_seller:
+            request.user.is_seller = True
+            request.user.save(update_fields=['is_seller'])
 
         # Handle image uploads if provided
         images = request.FILES.getlist('images')
         uploaded_images = []
 
-        for index, image_file in enumerate(images[:10]):  # Max 10 images
+        # STEP 7: Limit images based on subscription plan
+        max_images = active_subscription.pricing_id.max_images_per_listing
+
+        for index, image_file in enumerate(images[:max_images]):
+            img = None  # Initialize for cleanup
             try:
                 # Validate file type
                 allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
@@ -129,6 +178,8 @@ def listing_create(request):
                     continue
 
                 # Open and optimize image
+                # NOTE: Original uploaded file remains in memory only and is never saved to disk
+                # Only the converted/optimized JPEG version is saved
                 img = Image.open(image_file)
 
                 # Convert to RGB if necessary
@@ -142,17 +193,24 @@ def listing_create(request):
                     new_height = int(img.height * ratio)
                     img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
 
-                # Save optimized image
+                # Save optimized image to BytesIO buffer
                 output = BytesIO()
                 img.save(output, format='JPEG', quality=85, optimize=True)
                 output.seek(0)
 
-                # Generate unique filename
+                # Close PIL image to free memory
+                img.close()
+                img = None
+
+                # Generate unique filename (always .jpg after conversion)
                 filename = f"listings/{listing.listing_id}/{uuid.uuid4().hex}.jpg"
 
-                # Save file
+                # Save ONLY the converted file to storage
                 path = default_storage.save(filename, ContentFile(output.read()))
                 url = default_storage.url(path)
+
+                # Close buffer
+                output.close()
 
                 # Create image record
                 listing_image = ListingImage.objects.create(
@@ -172,11 +230,21 @@ def listing_create(request):
                 # Log error but don't fail the entire request
                 print(f"Error uploading image {index}: {str(e)}")
                 continue
+            finally:
+                # Ensure PIL image is closed even if error occurs
+                if img:
+                    img.close()
 
         return Response({
-            'message': 'Listing created successfully',
+            'message': 'Listing created and activated successfully!',
             'listing': ListingDetailSerializer(listing).data,
-            'images_uploaded': len(uploaded_images)
+            'images_uploaded': len(uploaded_images),
+            'subscription_info': {
+                'plan': active_subscription.pricing_id.pricing_name,
+                'listings_used': active_subscription.listings_used,
+                'listings_remaining': active_subscription.remaining_listings,
+                'max_listings': active_subscription.pricing_id.max_listings
+            }
         }, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -207,29 +275,99 @@ def listing_update(request, pk):
     """
     Update listing (owner only)
     PUT/PATCH /api/listings/{id}/
+
+    NOTE: Status changes are restricted. Users can only:
+    - Change basic fields (title, description, price, location)
+    - Cannot change status to 'active' (use separate endpoint)
+    - Can mark as 'sold' or 'hidden' via status update endpoint
     """
     listing = get_object_or_404(Listing, pk=pk)
-    
+
     # Check ownership
     if listing.userid != request.user:
         return Response({
             'error': 'You do not have permission to edit this listing'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
+    # Create a mutable copy of request data
+    data = request.data.copy()
+
+    # PREVENT unauthorized status changes
+    # Remove listing_status from update data to prevent manipulation
+    if 'listing_status' in data:
+        return Response({
+            'error': 'Cannot change listing status through this endpoint. Use /api/listings/{id}/update-status/ to mark as sold or hidden.'
+        }, status=status.HTTP_403_FORBIDDEN)
+
     serializer = ListingCreateSerializer(
         listing,
-        data=request.data,
+        data=data,
         partial=True
     )
-    
+
     if serializer.is_valid():
         serializer.save()
         return Response({
             'message': 'Listing updated successfully',
             'listing': ListingDetailSerializer(listing).data
         })
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def listing_update_status(request, pk):
+    """
+    Update listing status (sold/hidden only)
+    PATCH /api/listings/{id}/update-status/
+    {
+        "status": "sold"  // or "hidden"
+    }
+
+    Rules:
+    - Users can ONLY mark listings as 'sold' or 'hidden'
+    - Users CANNOT set status to 'active' - only subscription system can activate listings
+    - When deactivating (active -> sold/hidden), listing quota is freed
+    """
+    listing = get_object_or_404(Listing, pk=pk)
+
+    # Check ownership
+    if listing.userid != request.user:
+        return Response({
+            'error': 'You do not have permission to modify this listing'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    new_status = request.data.get('status')
+
+    # Users can ONLY set to 'sold' or 'hidden' - NOT 'active'
+    if new_status not in ['sold', 'hidden']:
+        return Response({
+            'error': 'Invalid status. You can only mark listings as "sold" or "hidden". Listings are activated automatically by your subscription.',
+            'allowed_statuses': ['sold', 'hidden']
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    old_status = listing.listing_status
+
+    # If deactivating (active -> sold/hidden), free up quota
+    if old_status == 'active' and new_status in ['sold', 'hidden']:
+        subscription = UserSubscription.objects.filter(
+            userid=request.user,
+            subscription_status='active'
+        ).first()
+
+        if subscription and subscription.listings_used > 0:
+            subscription.listings_used -= 1
+            subscription.save(update_fields=['listings_used', 'updatedat'])
+
+    # Update status
+    listing.listing_status = new_status
+    listing.save(update_fields=['listing_status', 'updatedat'])
+
+    return Response({
+        'message': f'Listing marked as {new_status}',
+        'listing': ListingDetailSerializer(listing).data
+    })
 
 
 @api_view(['DELETE'])
@@ -263,9 +401,9 @@ def my_listings(request):
         return Response({
             'error': 'Authentication required'
         }, status=status.HTTP_401_UNAUTHORIZED)
-    
-    listings = Listing.objects.filter(userid=request.user).order_by('-createdat')
-    serializer = ListingSerializer(listings, many=True)
+
+    listings = Listing.objects.filter(userid=request.user).select_related('userid', 'cat_id').prefetch_related('images').order_by('-createdat')
+    serializer = ListingSerializer(listings, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -278,9 +416,9 @@ def featured_listings(request):
     listings = Listing.objects.filter(
         listing_status='active',
         is_featured=True
-    ).order_by('-createdat')[:10]
-    
-    serializer = ListingSerializer(listings, many=True)
+    ).select_related('userid', 'cat_id').prefetch_related('images').order_by('-createdat')[:10]
+
+    serializer = ListingSerializer(listings, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -291,21 +429,21 @@ def similar_listings(request, pk):
     GET /api/listings/{id}/similar/
     """
     from decimal import Decimal
-    
+
     listing = get_object_or_404(Listing, pk=pk)
-    
+
     # Price range: ±30% using Decimal arithmetic
     min_price = listing.listing_price * Decimal('0.7')
     max_price = listing.listing_price * Decimal('1.3')
-    
+
     similar = Listing.objects.filter(
         cat_id=listing.cat_id,
         listing_status='active',
         listing_price__gte=min_price,
         listing_price__lte=max_price
     ).exclude(pk=pk).select_related('userid', 'cat_id').prefetch_related('images').order_by('-createdat')[:6]
-    
-    serializer = ListingSerializer(similar, many=True)
+
+    serializer = ListingSerializer(similar, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -563,37 +701,47 @@ def upload_listing_image(request, listing_id):
             'error': 'File too large. Maximum size is 5MB'
         }, status=status.HTTP_400_BAD_REQUEST)
     
+    img = None
+    output = None
+
     try:
         # Open and optimize image
         img = Image.open(image_file)
-        
+
         # Convert to RGB if necessary
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
-        
+
         # Resize if too large (max 1920px width)
         max_width = 1920
         if img.width > max_width:
             ratio = max_width / img.width
             new_height = int(img.height * ratio)
             img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
-        
-        # Save optimized image
+
+        # Save optimized image to BytesIO buffer
         output = BytesIO()
         img.save(output, format='JPEG', quality=85, optimize=True)
         output.seek(0)
-        
-        # Generate unique filename
-        ext = 'jpg'
-        filename = f"listings/{listing.listing_id}/{uuid.uuid4().hex}.{ext}"
-        
-        # Save file
+
+        # Close PIL image immediately to free memory
+        img.close()
+        img = None
+
+        # Generate unique filename (always .jpg after conversion)
+        filename = f"listings/{listing.listing_id}/{uuid.uuid4().hex}.jpg"
+
+        # Save ONLY the converted file to storage
         path = default_storage.save(filename, ContentFile(output.read()))
         url = default_storage.url(path)
-        
+
+        # Close buffer
+        output.close()
+        output = None
+
         # Get next display order
         max_order = ListingImage.objects.filter(listing_id=listing).count()
-        
+
         # Create image record
         listing_image = ListingImage.objects.create(
             listing_id=listing,
@@ -601,7 +749,7 @@ def upload_listing_image(request, listing_id):
             is_primary=(max_order == 0),  # First image is primary
             display_order=max_order
         )
-        
+
         return Response({
             'message': 'Image uploaded successfully',
             'image': {
@@ -611,11 +759,19 @@ def upload_listing_image(request, listing_id):
                 'display_order': listing_image.display_order
             }
         }, status=status.HTTP_201_CREATED)
-        
+
     except Exception as e:
         return Response({
             'error': f'Error processing image: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    finally:
+        # Ensure cleanup of resources
+        if img:
+            img.close()
+        if output:
+            output.close()
+        # Django will automatically clean up temporary files from request.FILES
+        # after the request completes, so no manual deletion needed
 
 
 @api_view(['DELETE'])

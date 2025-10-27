@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -12,6 +12,7 @@ interface PaymentModalProps {
   onClose: () => void;
   listingId?: number;
   categoryScope?: 'all' | 'real_estate' | 'vehicle';
+  preSelectedPlanId?: number; // Pre-selected plan from pricing page
 }
 
 export default function PaymentModal({
@@ -19,15 +20,23 @@ export default function PaymentModal({
   onClose,
   listingId,
   categoryScope = 'all',
+  preSelectedPlanId,
 }: PaymentModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<number | null>(preSelectedPlanId || null);
   const [paymentMethod, setPaymentMethod] = useState<'mobile_money' | 'card'>('mobile_money');
   const [phoneNumber, setPhoneNumber] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Sync selectedPlan with preSelectedPlanId prop changes
+  useEffect(() => {
+    if (preSelectedPlanId) {
+      setSelectedPlan(preSelectedPlanId);
+    }
+  }, [preSelectedPlanId]);
+
   // Fetch pricing plans
-  const { data: pricingPlans, isLoading } = useQuery({
+  const { data: pricingPlans, isLoading, error } = useQuery({
     queryKey: ['pricing-plans', categoryScope],
     queryFn: () => pricingPlansApi.getAll(),
     enabled: isOpen,
@@ -78,7 +87,9 @@ export default function PaymentModal({
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Select a Plan</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {selectedPlan ? 'Complete Payment' : 'Select a Plan'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -93,71 +104,153 @@ export default function PaymentModal({
             <div className="flex justify-center py-12">
               <LoadingSpinner size="lg" text="Loading plans..." />
             </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600 mb-4">Failed to load pricing plans</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn btn-secondary"
+              >
+                Reload Page
+              </button>
+            </div>
+          ) : !pricingPlans || pricingPlans.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-4">No pricing plans available at the moment</p>
+            </div>
           ) : (
             <>
-              {/* Pricing Plans Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {pricingPlans?.filter(plan => plan.is_featured).map((plan) => (
-                  <div
-                    key={plan.pricing_id}
-                    onClick={() => setSelectedPlan(plan.pricing_id)}
-                    className={`relative border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                      selectedPlan === plan.pricing_id
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-gray-200 hover:border-primary-300'
-                    }`}
+              {/* Plan Confirmation (if selected) */}
+              {selectedPlan && !selectedPlanData && (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 mb-4">
+                    Selected plan not found. The plan may no longer be available.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSelectedPlan(null);
+                    }}
+                    className="btn btn-secondary"
                   >
-                    {/* Selected Checkmark */}
-                    {selectedPlan === plan.pricing_id && (
-                      <div className="absolute top-4 right-4 w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    )}
+                    Choose Another Plan
+                  </button>
+                </div>
+              )}
 
-                    {/* Plan Name */}
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {plan.pricing_name}
-                    </h3>
-
-                    {/* Price */}
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-primary-600">
-                        {parseFloat(plan.plan_price).toLocaleString()} BIF
-                      </span>
-                      <span className="text-gray-600 ml-2">
-                        /{plan.duration_days} days
-                      </span>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-gray-600 text-sm mb-4">
-                      {plan.pricing_description}
-                    </p>
-
-                    {/* Features */}
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2 text-gray-700">
-                        <Check className="w-4 h-4 text-green-500" />
-                        Up to {plan.max_listings} listing{plan.max_listings > 1 ? 's' : ''}
-                      </li>
-                      <li className="flex items-center gap-2 text-gray-700">
-                        <Check className="w-4 h-4 text-green-500" />
-                        {plan.max_images_per_listing} images per listing
-                      </li>
-                      {plan.is_featured && (
+              {selectedPlan && selectedPlanData && (
+                <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Selected Plan</h3>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xl font-bold text-primary-600 mb-1">
+                        {selectedPlanData.pricing_name}
+                      </p>
+                      <p className="text-gray-600 text-sm mb-3">
+                        {selectedPlanData.pricing_description}
+                      </p>
+                      <ul className="space-y-1 text-sm">
                         <li className="flex items-center gap-2 text-gray-700">
                           <Check className="w-4 h-4 text-green-500" />
-                          <span className="font-semibold text-primary-600">Featured badge</span>
+                          Up to {selectedPlanData.max_listings} listing{selectedPlanData.max_listings > 1 ? 's' : ''}
                         </li>
-                      )}
-                      <li className="flex items-center gap-2 text-gray-700">
-                        <Check className="w-4 h-4 text-green-500" />
-                        {plan.duration_days} days active
-                      </li>
-                    </ul>
+                        <li className="flex items-center gap-2 text-gray-700">
+                          <Check className="w-4 h-4 text-green-500" />
+                          {selectedPlanData.max_images_per_listing} images per listing
+                        </li>
+                        <li className="flex items-center gap-2 text-gray-700">
+                          <Check className="w-4 h-4 text-green-500" />
+                          {selectedPlanData.duration_days} days active
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold text-primary-600">
+                        {parseFloat(selectedPlanData.plan_price).toLocaleString()} BIF
+                      </p>
+                      <button
+                        onClick={() => setSelectedPlan(null)}
+                        className="text-sm text-primary-600 hover:text-primary-700 mt-2"
+                      >
+                        Change plan
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* Pricing Plans Grid (show if no plan selected or when user changes plan) */}
+              {!selectedPlan && (
+                <>
+                  {pricingPlans?.filter(plan => parseFloat(plan.plan_price) > 0).length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-600 mb-4">No paid plans available. All plans are free!</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                      {pricingPlans?.filter(plan => parseFloat(plan.plan_price) > 0).map((plan) => (
+                    <div
+                      key={plan.pricing_id}
+                      onClick={() => setSelectedPlan(plan.pricing_id)}
+                      className={`relative border-2 rounded-lg p-6 cursor-pointer transition-all ${
+                        selectedPlan === plan.pricing_id
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-300'
+                      }`}
+                    >
+                      {/* Selected Checkmark */}
+                      {selectedPlan === plan.pricing_id && (
+                        <div className="absolute top-4 right-4 w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+
+                      {/* Plan Name */}
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {plan.pricing_name}
+                      </h3>
+
+                      {/* Price */}
+                      <div className="mb-4">
+                        <span className="text-3xl font-bold text-primary-600">
+                          {parseFloat(plan.plan_price).toLocaleString()} BIF
+                        </span>
+                        <span className="text-gray-600 ml-2">
+                          /{plan.duration_days} days
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-gray-600 text-sm mb-4">
+                        {plan.pricing_description}
+                      </p>
+
+                      {/* Features */}
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-center gap-2 text-gray-700">
+                          <Check className="w-4 h-4 text-green-500" />
+                          Up to {plan.max_listings} listing{plan.max_listings > 1 ? 's' : ''}
+                        </li>
+                        <li className="flex items-center gap-2 text-gray-700">
+                          <Check className="w-4 h-4 text-green-500" />
+                          {plan.max_images_per_listing} images per listing
+                        </li>
+                        {plan.is_featured && (
+                          <li className="flex items-center gap-2 text-gray-700">
+                            <Check className="w-4 h-4 text-green-500" />
+                            <span className="font-semibold text-primary-600">Featured badge</span>
+                          </li>
+                        )}
+                        <li className="flex items-center gap-2 text-gray-700">
+                          <Check className="w-4 h-4 text-green-500" />
+                          {plan.duration_days} days active
+                        </li>
+                      </ul>
+                    </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* Payment Method Selection */}
               {selectedPlan && (

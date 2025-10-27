@@ -1,0 +1,51 @@
+@startuml activite_inscription
+start
+
+:Utilisateur visite le site;
+:Clique sur "S'inscrire";
+
+:Remplit formulaire inscription:
+* Prénom/Nom
+* Email
+* Téléphone
+* Mot de passe;
+
+if (Données valides?) then (oui)
+    :Soumet le formulaire;
+    :Système crée compte utilisateur;
+    :Système génère code vérification;
+    :Système envoie email avec code;
+
+    fork
+        :Email envoyé;
+    fork again
+        :SMS envoyé (optionnel);
+    end fork
+
+    :Utilisateur reçoit code;
+    :Entre le code de vérification;
+
+    if (Code valide?) then (oui)
+        :Système marque email vérifié;
+        :Système crée badge "Verified";
+        :Log activité "USER_REGISTERED";
+        :Connexion automatique;
+        :Redirection vers dashboard;
+        stop
+    else (non)
+        :Affiche "Code invalide";
+        if (Trop de tentatives?) then (oui)
+            :Verrouille temporairement;
+            stop
+        else (non)
+            :Permet nouvelle tentative;
+            stop
+        endif
+    endif
+
+else (non)
+    :Affiche erreurs validation;
+    stop
+endif
+
+@enduml

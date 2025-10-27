@@ -8,6 +8,37 @@ Complete API reference for the Umuhuza marketplace platform.
 
 ---
 
+## 🆕 Recent Updates (January 2025)
+
+### ✅ **Subscription-Based Listing System Implemented**
+
+Major changes to align with monetization model:
+
+- ✅ **Auto-Subscription**: New verified users automatically get Basic Plan (1 free listing)
+- ✅ **Auto-Activation**: Listings are now automatically activated based on subscription quota
+- ✅ **Quota Enforcement**: Users cannot create listings beyond their plan limit
+- ✅ **Status Protection**: Users cannot manually change listing status to bypass subscription
+- ✅ **Pricing Plans**: 3 tiers - Basic (free), Premium (20,000 BIF), Dealer (50,000 BIF)
+- ✅ **Image Limits**: Enforced per plan (Basic: 5, Premium: 10, Dealer: 15)
+- ✅ **User Role Upgrade**: First listing automatically sets `is_seller = True`
+
+### 📝 **New/Updated Endpoints**
+
+- `POST /listings/create/` - Now includes subscription enforcement and auto-activation
+- `PATCH /listings/{id}/update-status/` - NEW: Safely change listing status (sold/hidden/active)
+- `GET /subscription/current/` - Get user's active subscription details
+- `PUT /listings/{id}/update/` - Now prevents status changes
+
+### 🔧 **New Management Command**
+
+```bash
+python manage.py setup_pricing_plans
+```
+
+Creates/updates the 3 standard pricing plans (Basic, Premium, Dealer).
+
+---
+
 ## 🔐 Authentication
 
 All protected endpoints require a JWT Bearer token in the Authorization header.
@@ -223,6 +254,88 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...
 
 ---
 
+## 💼 Subscription System
+
+### Overview
+
+The platform uses a subscription-based monetization model. Users must have an active subscription with available quota to create listings.
+
+### How It Works
+
+1. **New User Registration** → User created with `is_verified=False`
+2. **Email + Phone Verification** → `is_verified=True`
+3. **Auto-Subscription Created** → Basic Plan (1 listing, 60 days, 5 images, 0 BIF)
+4. **Create Listing** → Auto-activated if quota available
+5. **Quota Exhausted** → Must upgrade to Premium or Dealer plan
+
+### Pricing Plans
+
+| Plan | Price | Listings | Duration | Images | Featured |
+|------|-------|----------|----------|--------|----------|
+| **Basic Plan** | 0 BIF | 1 | 60 days | 5 | ❌ No |
+| **Premium Plan** | 20,000 BIF | 10 | 90 days | 10 | ✅ Yes |
+| **Dealer Monthly** | 50,000 BIF | Unlimited | 30 days | 15 | ✅ Yes |
+
+### Get Current Subscription
+
+**Endpoint:** `GET /subscription/current/`
+
+**Auth Required:** Yes
+
+**Response:** `200 OK`
+```json
+{
+  "has_subscription": true,
+  "subscription": {
+    "user_subscr_id": 1,
+    "user": {
+      "userid": 1,
+      "full_name": "John Doe"
+    },
+    "plan": {
+      "pricing_id": 1,
+      "pricing_name": "Basic Plan",
+      "plan_price": "0.00",
+      "max_listings": 1,
+      "max_images_per_listing": 5,
+      "duration_days": 60,
+      "is_featured": false
+    },
+    "subscription_status": "active",
+    "starts_at": "2025-01-24T10:00:00Z",
+    "expires_at": null,
+    "listings_used": 0,
+    "remaining_listings": 1,
+    "auto_renew": false
+  }
+}
+```
+
+**No Subscription Response:**
+```json
+{
+  "message": "No active subscription found",
+  "has_subscription": false
+}
+```
+
+### Quota Enforcement
+
+**When Creating Listings:**
+- ✅ Checks if user has active subscription
+- ✅ Checks if `remaining_listings > 0`
+- ✅ Returns 403 if quota exhausted
+- ✅ Auto-increments `listings_used` on success
+
+**When Marking as Sold/Hidden:**
+- ✅ Decrements `listings_used` (frees quota)
+
+**When Reactivating:**
+- ✅ Checks quota availability first
+- ✅ Increments `listings_used` if reactivated
+
+---
+
 ## 📂 Categories
 
 ### List Categories
@@ -337,6 +450,11 @@ GET /listings/?category=1&min_price=50000000&max_price=100000000&location=Bujumb
 
 **Auth Required:** Yes
 
+**⚠️ Requirements:**
+- User must be verified (`is_verified = True`)
+- User must have active subscription
+- Subscription must have available quota (`remaining_listings > 0`)
+
 **Request:**
 ```json
 {
@@ -348,18 +466,75 @@ GET /listings/?category=1&min_price=50000000&max_price=100000000&location=Bujumb
 }
 ```
 
-**Response:** `201 Created`
+**With Images (multipart/form-data):**
+```
+Form-Data:
+  cat_id: 1
+  listing_title: "Modern House in Bujumbura"
+  list_description: "Beautiful 3-bedroom house..."
+  listing_price: 75000000
+  list_location: "Bujumbura, Rohero"
+  images: [file1.jpg, file2.jpg, ...] (max based on plan)
+```
+
+**Success Response:** `201 Created`
 ```json
 {
-  "message": "Listing created successfully",
+  "message": "Listing created and activated successfully!",
   "listing": {
     "listing_id": 5,
     "listing_title": "Modern House in Bujumbura",
-    "listing_status": "pending",
+    "listing_status": "active",
+    "expiration_date": "2025-04-24T10:00:00Z",
+    "is_featured": false,
     /* ... full listing object ... */
+  },
+  "images_uploaded": 3,
+  "subscription_info": {
+    "plan": "Basic Plan",
+    "listings_used": 1,
+    "listings_remaining": 0,
+    "max_listings": 1
   }
 }
 ```
+
+**Error: Not Verified**
+```json
+{
+  "error": "You must verify your email and phone before creating listings",
+  "verification_required": true
+}
+```
+Status: `403 Forbidden`
+
+**Error: No Subscription**
+```json
+{
+  "error": "No active subscription found. Please contact support.",
+  "needs_subscription": true
+}
+```
+Status: `403 Forbidden`
+
+**Error: Quota Exceeded**
+```json
+{
+  "error": "You have reached your listing limit (1 listings). Upgrade your plan to create more listings.",
+  "quota_exceeded": true,
+  "current_plan": "Basic Plan",
+  "max_listings": 1,
+  "listings_used": 1
+}
+```
+Status: `403 Forbidden`
+
+**⚡ Automatic Actions:**
+- ✅ Listing status set to `active` (not pending!)
+- ✅ `expiration_date` set based on plan duration
+- ✅ `listings_used` incremented in subscription
+- ✅ User's `is_seller` flag set to `True` (if first listing)
+- ✅ Images limited to `max_images_per_listing` from plan
 
 ### Get Listing Detail
 
@@ -390,15 +565,21 @@ GET /listings/?category=1&min_price=50000000&max_price=100000000&location=Bujumb
 
 ### Update Listing
 
-**Endpoint:** `PUT /listings/{id}/update/`
+**Endpoint:** `PUT /listings/{id}/update/` or `PATCH /listings/{id}/update/`
 
 **Auth Required:** Yes (Owner only)
+
+**⚠️ Important:**
+- **Cannot change `listing_status` through this endpoint**
+- Use `/listings/{id}/update-status/` instead
+- Can only update: title, description, price, location, category
 
 **Request:**
 ```json
 {
   "listing_title": "Updated Title",
-  "listing_price": 80000000
+  "listing_price": 80000000,
+  "list_description": "Updated description..."
 }
 ```
 
@@ -409,6 +590,71 @@ GET /listings/?category=1&min_price=50000000&max_price=100000000&location=Bujumb
   "listing": { /* updated listing object */ }
 }
 ```
+
+**Error: Attempted Status Change**
+```json
+{
+  "error": "Cannot change listing status through this endpoint. Use /api/listings/{id}/update-status/ to mark as sold or hidden."
+}
+```
+Status: `403 Forbidden`
+
+---
+
+### Update Listing Status
+
+**Endpoint:** `PATCH /listings/{id}/update-status/`
+
+**Auth Required:** Yes (Owner only)
+
+**Purpose:** Safely change listing status with quota management
+
+**Request:**
+```json
+{
+  "status": "sold"
+}
+```
+
+**Allowed Status Values:**
+- `"sold"` - Mark listing as sold
+- `"hidden"` - Hide listing from public view
+- `"active"` - Reactivate a sold/hidden listing (requires quota)
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Listing marked as sold",
+  "listing": { /* updated listing object */ }
+}
+```
+
+**Behavior:**
+- **Marking as Sold/Hidden:**
+  - ✅ Decrements `listings_used` (frees quota)
+  - ✅ Allows creating new listing with freed quota
+
+- **Reactivating (sold/hidden → active):**
+  - ✅ Checks if quota available
+  - ✅ Increments `listings_used`
+  - ❌ Returns 403 if no quota
+
+**Error: No Quota to Reactivate**
+```json
+{
+  "error": "No available quota to reactivate listing. Please upgrade your plan.",
+  "quota_exceeded": true
+}
+```
+Status: `403 Forbidden`
+
+**Error: Invalid Status**
+```json
+{
+  "error": "Invalid status. Allowed: sold, hidden, active"
+}
+```
+Status: `400 Bad Request`
 
 ### Delete Listing
 
@@ -854,7 +1100,7 @@ Form-Data:
 
 ---
 
-## 💳 Payments
+## 💳 Payments & Pricing
 
 ### Get Pricing Plans
 
@@ -868,27 +1114,43 @@ Form-Data:
   {
     "pricing_id": 1,
     "pricing_name": "Basic Plan",
-    "pricing_description": "1 listing for 30 days",
+    "pricing_description": "Perfect for occasional sellers",
     "plan_price": "0.00",
-    "duration_days": 30,
+    "duration_days": 60,
     "category_scope": "all",
     "max_listings": 1,
-    "max_images_per_listing": 3,
-    "is_featured": false
+    "max_images_per_listing": 5,
+    "is_featured": false,
+    "is_active": true
   },
   {
     "pricing_id": 2,
     "pricing_name": "Premium Plan",
-    "pricing_description": "Featured listing for 60 days",
-    "plan_price": "10000.00",
-    "duration_days": 60,
+    "pricing_description": "Boost your listings with featured placement",
+    "plan_price": "20000.00",
+    "duration_days": 90,
     "category_scope": "all",
-    "max_listings": 1,
+    "max_listings": 10,
     "max_images_per_listing": 10,
-    "is_featured": true
+    "is_featured": true,
+    "is_active": true
+  },
+  {
+    "pricing_id": 3,
+    "pricing_name": "Dealer Monthly",
+    "pricing_description": "Unlimited listings for professional dealers",
+    "plan_price": "50000.00",
+    "duration_days": 30,
+    "category_scope": "all",
+    "max_listings": 999999,
+    "max_images_per_listing": 15,
+    "is_featured": true,
+    "is_active": true
   }
 ]
 ```
+
+**📝 Note:** Run `python manage.py setup_pricing_plans` to create/update these plans.
 
 ### Initiate Payment
 
@@ -1105,4 +1367,219 @@ GET /listings/?category=1&min_price=50000000&search=house&ordering=-createdat
 
 ---
 
-**For support, contact: support@umuhuza.com**
+## 🔧 Backend Architecture Changes
+
+### New Features Implemented (January 2025)
+
+#### 1. **Auto-Subscription System**
+
+**File:** `backend/users/signals.py`
+
+**How it works:**
+- Django signal (`post_save`) on User model
+- Triggers when `is_verified` changes to `True`
+- Automatically creates Basic Plan subscription
+- User gets 1 free listing immediately
+
+**Code Location:** `assign_free_tier_to_new_user` function
+
+---
+
+#### 2. **Subscription-Based Listing Creation**
+
+**File:** `backend/listings/views.py` - `listing_create` function
+
+**Checks Performed:**
+1. ✅ User verification status
+2. ✅ Active subscription exists
+3. ✅ Quota availability (`has_quota` property)
+4. ✅ Image count vs plan limit
+
+**Auto-Actions:**
+1. ✅ Set status to `active`
+2. ✅ Set `expiration_date`
+3. ✅ Increment `listings_used`
+4. ✅ Set `is_seller = True`
+
+---
+
+#### 3. **Status Protection System**
+
+**Files:**
+- `backend/listings/views.py` - `listing_update` (blocks status changes)
+- `backend/listings/views.py` - `listing_update_status` (new endpoint)
+
+**Security:**
+- Users cannot bypass subscription by manually setting `listing_status='active'`
+- Separate endpoint for status changes with quota checks
+- Prevents fraud and abuse
+
+---
+
+#### 4. **Quota Management**
+
+**Model:** `UserSubscription` (backend/listings/models.py)
+
+**Properties:**
+- `remaining_listings` - Computed property: `max_listings - listings_used`
+- `has_quota` - Boolean: `remaining_listings > 0`
+- `is_active` - Checks if subscription is active and not expired
+
+**Behavior:**
+- Creating listing → Increments `listings_used`
+- Marking as sold/hidden → Decrements `listings_used`
+- Reactivating → Checks quota first
+
+---
+
+### Management Commands
+
+#### Setup Pricing Plans
+
+**Command:** `python manage.py setup_pricing_plans`
+
+**What it does:**
+- Creates/updates 3 standard pricing plans
+- Safe to run multiple times (uses `update_or_create`)
+- Plans: Basic (0 BIF), Premium (20,000 BIF), Dealer (50,000 BIF)
+
+**Location:** `backend/listings/management/commands/setup_pricing_plans.py`
+
+**Usage:**
+```bash
+cd backend
+source venv/bin/activate
+python manage.py setup_pricing_plans
+```
+
+**Output:**
+```
+✓ Created: Basic Plan
+✓ Created: Premium Plan
+✓ Created: Dealer Monthly
+
+✅ Pricing plans setup complete!
+Total plans: 3
+```
+
+---
+
+### Database Models
+
+#### Key Models
+
+**UserSubscription** (`backend/listings/models.py`)
+```python
+class UserSubscription(models.Model):
+    userid = ForeignKey(User)
+    pricing_id = ForeignKey(PricingPlan)
+    subscription_status = CharField  # active, expired, cancelled
+    starts_at = DateTimeField
+    expires_at = DateTimeField
+    listings_used = IntegerField
+    auto_renew = BooleanField
+
+    @property
+    def remaining_listings(self):
+        return self.pricing_id.max_listings - self.listings_used
+
+    @property
+    def has_quota(self):
+        return self.remaining_listings > 0
+
+    @property
+    def is_active(self):
+        # Check status and expiration
+```
+
+**PricingPlan** (`backend/listings/models.py`)
+```python
+class PricingPlan(models.Model):
+    pricing_name = CharField
+    plan_price = DecimalField
+    duration_days = IntegerField
+    max_listings = IntegerField
+    max_images_per_listing = IntegerField
+    is_featured = BooleanField
+    is_active = BooleanField
+```
+
+**Listing** (`backend/listings/models.py`)
+```python
+class Listing(models.Model):
+    listing_status = CharField  # active, pending, sold, hidden, expired
+    expiration_date = DateTimeField
+    is_featured = BooleanField
+    views = IntegerField
+    # ... other fields
+```
+
+---
+
+### API Endpoint Summary
+
+#### New Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/subscription/current/` | GET | Get user's active subscription |
+| `/listings/{id}/update-status/` | PATCH | Change listing status safely |
+
+#### Modified Endpoints
+
+| Endpoint | Changes |
+|----------|---------|
+| `/listings/create/` | ✅ Quota enforcement<br>✅ Auto-activation<br>✅ Subscription checks |
+| `/listings/{id}/update/` | ❌ Status changes blocked |
+
+---
+
+### Testing
+
+```bash
+# 1. Start servers
+./dev.sh
+
+# 2. Register & verify user
+# 3. Check subscription created
+# 4. Create listing → Auto-activated
+# 5. Try 2nd listing → Blocked
+# 6. Upgrade to Premium
+# 7. Create more listings → Success
+```
+
+---
+
+### Future Improvements
+
+**For Production:**
+
+1. **Cron Jobs:**
+   - Expire subscriptions automatically
+   - Expire listings past `expiration_date`
+   - Send renewal reminders
+
+2. **Payment Integration:**
+   - Replace simulated payment with real gateway
+   - Add manual payment proof upload (Phase 1 MVP)
+   - Webhook handlers for payment verification
+
+3. **Admin Features:**
+   - Manual subscription management
+   - Listing approval system (optional)
+   - Fraud detection
+
+4. **Analytics:**
+   - Subscription metrics
+   - Revenue tracking
+   - Listing performance
+
+---
+
+## 📚 Additional Documentation
+
+- **Frontend API Usage:** See `frontend/src/api/` directory
+- **Quick Start:** `QUICKSTART.md` for getting started
+
+---
+

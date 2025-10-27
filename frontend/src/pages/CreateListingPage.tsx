@@ -12,7 +12,8 @@ import Button from '../components/common/Button';
 import ImageUpload from '../components/listings/ImageUpload';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import LocationInput from '../components/common/LocationInput';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus, ArrowLeft, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 interface ListingFormData {
   cat_id: number;
@@ -43,6 +44,7 @@ const schema = yup.object({
 
 export default function CreateListingPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [images, setImages] = useState<File[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -60,6 +62,16 @@ export default function CreateListingPage() {
     queryKey: ['categories'],
     queryFn: listingsApi.getCategories,
   });
+
+  // Fetch current subscription
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['current-subscription'],
+    queryFn: listingsApi.getCurrentSubscription,
+    enabled: !!user,
+  });
+
+  const subscription = subscriptionData?.subscription;
+  const hasQuota = subscription ? subscription.remaining_listings > 0 : true;
 
   // Create listing mutation
   const createMutation = useMutation({
@@ -129,6 +141,48 @@ export default function CreateListingPage() {
             Fill in the details to create your listing
           </p>
         </div>
+
+        {/* Subscription Quota Banner */}
+        {subscription && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            hasQuota
+              ? 'bg-green-50 border-green-200'
+              : 'bg-red-50 border-red-200'
+          }`}>
+            <div className="flex items-start gap-3">
+              <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                hasQuota ? 'text-green-600' : 'text-red-600'
+              }`} />
+              <div className="flex-1">
+                {hasQuota ? (
+                  <div>
+                    <p className="font-semibold text-green-900">
+                      {subscription.plan.pricing_name} - {subscription.remaining_listings} listing{subscription.remaining_listings !== 1 ? 's' : ''} remaining
+                    </p>
+                    <p className="text-sm text-green-700 mt-1">
+                      You're using {subscription.listings_used} of {subscription.plan.max_listings} listings
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-semibold text-red-900">
+                      Listing limit reached
+                    </p>
+                    <p className="text-sm text-red-700 mt-1">
+                      You've used all {subscription.plan.max_listings} listing{subscription.plan.max_listings !== 1 ? 's' : ''} in your {subscription.plan.pricing_name}
+                    </p>
+                    <Button
+                      onClick={() => navigate('/pricing')}
+                      className="mt-3 bg-primary-600 hover:bg-primary-700"
+                    >
+                      Upgrade Plan
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="mb-8">
@@ -290,7 +344,7 @@ export default function CreateListingPage() {
               <ImageUpload
                 images={images}
                 onImagesChange={setImages}
-                maxImages={10}
+                maxImages={subscription?.plan?.max_images_per_listing || 5}
               />
 
               {/* Preview Summary */}
@@ -309,9 +363,9 @@ export default function CreateListingPage() {
                 type="submit"
                 fullWidth
                 isLoading={createMutation.isPending}
-                disabled={images.length === 0}
+                disabled={images.length === 0 || !hasQuota}
               >
-                Create Listing
+                {!hasQuota ? 'Upgrade Plan to Create Listing' : 'Create Listing'}
               </Button>
             </div>
           )}

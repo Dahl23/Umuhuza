@@ -1,0 +1,85 @@
+@startuml diagramme_interaction_global
+title Diagramme d'Interaction Global - Transaction Complète
+
+start
+
+:Utilisateur s'inscrit;
+
+ref over : Séquence: Inscription
+  - Création compte
+  - Vérification email
+  - Génération tokens JWT
+end ref
+
+:Utilisateur connecté;
+
+partition "Gestion Abonnement" {
+    :Consulte plans tarifaires;
+
+    if (Choisit plan payant?) then (oui)
+        ref over : Séquence: Paiement
+          - Initialisation Lumicash
+          - Traitement paiement
+          - Création abonnement
+        end ref
+
+        :Abonnement actif créé;
+    else (non)
+        :Utilise plan gratuit (1 annonce);
+    endif
+}
+
+partition "Création Annonce" {
+    :Vendeur crée annonce;
+
+    ref over : Activité: Création Annonce
+      - Vérification quota
+      - Upload images
+      - ACTIVATION AUTOMATIQUE
+      - Incrémentation usage
+    end ref
+
+    :Annonce publiée (active);
+}
+
+partition "Interactions Acheteur" {
+    :Acheteur consulte annonces;
+
+    fork
+        :Ajoute aux favoris;
+    fork again
+        :Contacte vendeur;
+
+        ref over : Séquence: Messagerie
+          - Création conversation
+          - Envoi messages
+          - Notifications
+        end ref
+    end fork
+
+    :Transaction réussie;
+}
+
+partition "Finalisation" {
+    :Vendeur marque comme vendue;
+
+    ref over : États: Annonce
+      active → vendue
+    end ref
+
+    :Quota libéré;
+}
+
+stop
+
+legend right
+  Ce diagramme combine:
+  - 4 diagrammes de séquence
+  - 3 diagrammes d'activité
+  - 1 diagramme d'états
+
+  Montre le flux complet
+  d'une transaction Umuhuza
+endlegend
+
+@enduml

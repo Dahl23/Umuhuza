@@ -1,15 +1,20 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Check, Zap, Star, Building2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
+import PaymentModal from '../components/payments/PaymentModal';
 import { pricingPlansApi } from '../api/payments';
 import { useAuthStore } from '../store/authStore';
 
 export default function PricingPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   // Fetch pricing plans
   const { data: pricingPlans, isLoading } = useQuery({
@@ -17,13 +22,21 @@ export default function PricingPage() {
     queryFn: () => pricingPlansApi.getAll(),
   });
 
-  const handleSelectPlan = (planId: number) => {
+  const handleSelectPlan = (plan: any) => {
     if (!user) {
       navigate('/login');
       return;
     }
-    // Navigate to create listing or payment flow
-    navigate(`/listings/create?plan=${planId}`);
+
+    // If it's the free plan, just redirect to create listing
+    if (parseFloat(plan.plan_price) === 0) {
+      navigate('/listings/create');
+      return;
+    }
+
+    // For paid plans, set selected plan and open payment modal
+    setSelectedPlanId(plan.pricing_id);
+    setPaymentModalOpen(true);
   };
 
   const getPlanIcon = (planName: string) => {
@@ -156,7 +169,7 @@ export default function PricingPage() {
                       <Button
                         fullWidth
                         variant={isPremium ? 'primary' : 'outline'}
-                        onClick={() => handleSelectPlan(plan.pricing_id)}
+                        onClick={() => handleSelectPlan(plan)}
                         className={
                           isDealer
                             ? 'bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white border-0'
@@ -186,6 +199,16 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false);
+          setSelectedPlanId(null);
+        }}
+        preSelectedPlanId={selectedPlanId || undefined}
+      />
     </Layout>
   );
 }

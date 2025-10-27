@@ -24,9 +24,25 @@ class CategorySerializer(serializers.ModelSerializer):
 # ============================================================================
 
 class ListingImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ListingImage
         fields = ['listimage_id', 'image_url', 'is_primary', 'display_order']
+
+    def get_image_url(self, obj):
+        """Return absolute URL for images"""
+        request = self.context.get('request')
+        if obj.image_url:
+            # If the URL is already absolute, return it as is
+            if obj.image_url.startswith('http://') or obj.image_url.startswith('https://'):
+                return obj.image_url
+            # Otherwise, build absolute URI
+            if request:
+                return request.build_absolute_uri(obj.image_url)
+            # Fallback: return the relative URL if no request context
+            return obj.image_url
+        return None
 
 
 class ListingSerializer(serializers.ModelSerializer):

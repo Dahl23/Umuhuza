@@ -65,6 +65,12 @@ export const listingsApi = {
     return response.data.listing;
   },
 
+  // Update listing status
+  updateStatus: async (id: number, status: 'active' | 'sold' | 'hidden'): Promise<Listing> => {
+    const response = await apiClient.patch(`/listings/${id}/update-status/`, { status });
+    return response.data.listing;
+  },
+
   // Delete listing
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/listings/${id}/delete/`);

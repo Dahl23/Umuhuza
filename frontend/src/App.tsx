@@ -18,6 +18,7 @@ import EditListingPage from "./pages/EditListingPage";
 import PaymentVerifyPage from "./pages/PaymentVerifyPage";
 import PaymentHistoryPage from "./pages/PaymentHistoryPage";
 import DealerApplicationPage from "./pages/DealerApplicationPage";
+import PricingPage from "./pages/PricingPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {

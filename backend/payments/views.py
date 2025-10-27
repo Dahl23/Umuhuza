@@ -233,26 +233,39 @@ def payment_verify(request):
     starts_at = timezone.now()
     expires_at = starts_at + timedelta(days=plan.duration_days)
 
-    # Check if user already has an active subscription for this plan
-    subscription = UserSubscription.objects.filter(
+    # Check if user already has an active subscription for this EXACT plan
+    existing_same_plan = UserSubscription.objects.filter(
         userid=request.user,
         pricing_id=plan,
         subscription_status='active'
     ).first()
 
-    if subscription:
-        # Extend existing subscription
-        if subscription.expires_at and subscription.expires_at > timezone.now():
+    if existing_same_plan:
+        # Renewing the same plan - extend the subscription
+        if existing_same_plan.expires_at and existing_same_plan.expires_at > timezone.now():
             # Add to existing expiration
-            subscription.expires_at = subscription.expires_at + timedelta(days=plan.duration_days)
+            existing_same_plan.expires_at = existing_same_plan.expires_at + timedelta(days=plan.duration_days)
         else:
             # Renew from now
-            subscription.starts_at = starts_at
-            subscription.expires_at = expires_at
-        subscription.subscription_status = 'active'
-        subscription.save()
+            existing_same_plan.starts_at = starts_at
+            existing_same_plan.expires_at = expires_at
+        existing_same_plan.subscription_status = 'active'
+        existing_same_plan.save()
+        subscription = existing_same_plan
     else:
-        # Create new subscription
+        # User is purchasing a NEW/DIFFERENT plan
+        # Cancel ALL other active subscriptions (especially auto-created Basic plan)
+        other_active_subs = UserSubscription.objects.filter(
+            userid=request.user,
+            subscription_status='active'
+        ).exclude(pricing_id=plan)
+
+        for old_sub in other_active_subs:
+            old_sub.subscription_status = 'cancelled'
+            old_sub.expires_at = timezone.now()  # Expire immediately
+            old_sub.save(update_fields=['subscription_status', 'expires_at', 'updatedat'])
+
+        # Create new subscription for the purchased plan
         subscription = UserSubscription.objects.create(
             userid=request.user,
             pricing_id=plan,

@@ -379,6 +379,7 @@ export default function DealerApplicationPage() {
                 title="Legal Information"
                 description="Optional: Provide your business credentials"
                 onBack={previousStep}
+                onNext={handleNextStep}
                 isFirstStep={isFirstStep}
                 isLastStep={isLastStep}
                 isValid={validateStep(3)}
@@ -387,7 +388,7 @@ export default function DealerApplicationPage() {
                 {/* Tax ID */}
                 <div>
                   <label htmlFor="tax_id" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tax ID / TIN (Optional)
+                    Tax ID / TIN / NIF
                   </label>
                   <input
                     {...register('tax_id')}
@@ -401,7 +402,7 @@ export default function DealerApplicationPage() {
                 {/* Business License */}
                 <div>
                   <label htmlFor="business_license" className="block text-sm font-medium text-gray-700 mb-2">
-                    Business License Number (Optional)
+                    Business License Number
                   </label>
                   <input
                     {...register('business_license')}

@@ -37,23 +37,38 @@ When an image is uploaded:
 1. **Validation**
    - File type: Only JPEG, PNG, WebP allowed
    - File size: Maximum 5MB per image
-   - Quantity: Maximum 10 images per listing
+   - Quantity: Based on subscription plan (Basic: 5, Premium: 10, Dealer: 15)
 
-2. **Optimization**
+2. **Optimization** (No Duplicate Files Created)
+   - **Original file handling:**
+     - Files <5MB: Kept in memory only (never touches disk)
+     - Files >5MB: Django creates temporary file, automatically deleted after request
+   - Open image with PIL from memory/temp file
    - Convert RGBA/P mode to RGB
    - Resize if width > 1920px (maintains aspect ratio)
-   - Save as JPEG with 85% quality
-   - Apply optimization
+   - Save as optimized JPEG with 85% quality to BytesIO buffer
+   - **Close PIL image object explicitly** to free memory
+   - Close BytesIO buffer after reading
+   - Django cleanup: Temp files deleted automatically when request completes
 
-3. **Storage**
-   - Generate unique filename: `{uuid}.jpg`
-   - Save to: `media/listings/{listing_id}/{uuid}.jpg`
+3. **Storage** (Single File Only)
+   - Generate unique filename: `{uuid}.jpg` (always .jpg after conversion)
+   - Save **ONLY the converted JPEG** to: `media/listings/{listing_id}/{uuid}.jpg`
    - Store URL in database: `/media/listings/{listing_id}/{uuid}.jpg`
+   - **No original file is ever saved to disk**
 
 4. **Database Record**
-   - Create `ListingImage` record
+   - Create `ListingImage` record with absolute URL
    - Set first image as primary
    - Assign display order
+
+5. **Memory Cleanup**
+   - PIL image closed explicitly in try/finally block
+   - BytesIO buffer closed after read
+   - Original uploaded file:
+     - Memory buffers: Released by Python garbage collector
+     - Temp files (>5MB): Automatically deleted by Django after request
+   - **Result: Only converted .jpg files remain on disk**
 
 ### Image URLs
 

@@ -1,0 +1,41 @@
+@startuml diagramme_communication
+title Diagramme de Communication - Création d'Annonce
+
+actor "Vendeur" as seller
+participant ":Frontend" as frontend
+participant ":ListingView" as view
+participant ":Subscription" as subscription
+participant ":Listing" as listing
+participant ":Storage" as storage
+database ":Database" as db
+
+seller -> frontend : 1: créerAnnonce(données)
+frontend -> view : 2: POST /api/listings/create/
+
+view -> subscription : 3: vérifierQuota(user)
+subscription -> db : 3.1: SELECT quota
+db -> subscription : 3.2: quota OK
+
+view -> listing : 4: créer(données)
+listing -> db : 4.1: INSERT (status='pending')
+db -> listing : 4.2: listing_id
+
+view -> listing : 5: activerAutomatiquement()
+listing -> db : 5.1: UPDATE status='active'
+
+view -> storage : 6: uploadImages(files)
+storage -> db : 6.1: INSERT images
+
+view -> subscription : 7: incrémenterUsage()
+subscription -> db : 7.1: UPDATE listings_used
+
+view -> frontend : 8: 201 Created {listing}
+frontend -> seller : 9: "Annonce activée!"
+
+note right of listing
+  Communication 5:
+  Activation automatique!
+  Pas de modération admin.
+end note
+
+@enduml

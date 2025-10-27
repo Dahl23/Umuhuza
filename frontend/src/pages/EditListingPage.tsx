@@ -20,7 +20,6 @@ interface ListingFormData {
   list_description: string;
   listing_price: number;
   list_location: string;
-  listing_status: 'active' | 'pending' | 'sold' | 'expired' | 'hidden';
 }
 
 const schema = yup.object({
@@ -40,9 +39,6 @@ const schema = yup.object({
   list_location: yup.string()
     .required('Location is required')
     .min(3, 'Location must be at least 3 characters'),
-  listing_status: yup.string()
-    .required('Status is required')
-    .oneOf(['active', 'pending', 'sold', 'expired', 'hidden']),
 });
 
 export default function EditListingPage() {
@@ -83,7 +79,6 @@ export default function EditListingPage() {
         list_description: listing.list_description,
         listing_price: parseFloat(listing.listing_price),
         list_location: listing.list_location,
-        listing_status: listing.listing_status,
       });
     }
   }, [listing, reset]);
@@ -210,23 +205,20 @@ export default function EditListingPage() {
               {...register('list_location')}
             />
 
-            {/* Status */}
+            {/* Status Display (Read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status *
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Current Status
               </label>
-              <select
-                {...register('listing_status')}
-                className="input"
-              >
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="sold">Sold</option>
-                <option value="hidden">Hidden</option>
-              </select>
-              {errors.listing_status && (
-                <p className="mt-1 text-sm text-red-600">{errors.listing_status.message}</p>
-              )}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  Current Status: <span className="font-semibold capitalize text-gray-900">{listing?.listing_status}</span>
+                </p>
+                <p className="text-xs text-gray-500">
+                  To change the status of this listing (active, sold, or hidden), go to the "My Listings" page and click the three-dot menu (⋮) next to this listing.
+                  Status changes cannot be made directly through editing.
+                </p>
+              </div>
             </div>
           </div>
 

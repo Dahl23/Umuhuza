@@ -1,0 +1,625 @@
+\documentclass[12pt,a4paper]{report}
+
+% =============== PACKAGES ===============
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{appendix}
+
+% =============== PAGE GEOMETRY ===============
+\geometry{
+    left=2.5cm,
+    right=2.5cm,
+    top=3cm,
+    bottom=3cm
+}
+
+% =============== HYPERREF SETUP ===============
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=green,
+    pdftitle={Rapport Projet II - Umuhuza},
+    pdfauthor={Andy Miguel Habyarimana, Dahl Ndayisenga},
+}
+
+% =============== CODE LISTING SETUP ===============
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% =============== HEADER/FOOTER ===============
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{Projet II - BAC3 Génie Logiciel - Année Académique 2024-2025}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% =============== CHAPTER/SECTION FORMATTING ===============
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{40pt}
+
+% =============== DOCUMENT BEGIN ===============
+\begin{document}
+
+% =============== PAGE DE GARDE ===============
+\begin{titlepage}
+    \begin{center}
+        \vspace*{1cm}
+
+        % Logo placeholder
+        \includegraphics[width=0.3\textwidth]{../images/logo_upg.png} % TODO: Ajouter logo UPG
+
+        \vspace{1cm}
+
+        {\LARGE \textbf{UNIVERSITÉ POLYTECHNIQUE DE GITEGA}}
+
+        \vspace{0.5cm}
+
+        {\Large FACULTÉ DES TECHNOLOGIES DE L'INFORMATION ET DE LA COMMUNICATION}
+
+        {\large DÉPARTEMENT DE GÉNIE LOGICIEL}
+
+        {\large CLASSE DE BAC3 - ANNÉE ACADÉMIQUE 2024-2025}
+
+        \vspace{2cm}
+
+        \rule{\linewidth}{0.5mm}
+
+        \vspace{0.5cm}
+
+        {\Huge \textbf{UMUHUZA}}
+
+        \vspace{0.3cm}
+
+        {\LARGE \textbf{Plateforme Marketplace de Location et Vente}}
+
+        {\LARGE \textbf{d'Immobilier et de Véhicules au Burundi}}
+
+        \vspace{0.5cm}
+
+        \rule{\linewidth}{0.5mm}
+
+        \vspace{2cm}
+
+        {\Large RAPPORT DE PROJET II}
+
+        \vfill
+
+        \begin{minipage}{0.4\textwidth}
+            \begin{flushleft}
+                \textbf{Présenté par:}\\
+                Andy Miguel HABYARIMANA\\
+                Dahl NDAYISENGA
+            \end{flushleft}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.4\textwidth}
+            \begin{flushright}
+                \textbf{Encadré par:}\\
+                % TODO: Nom de l'enseignant
+                Prof./Dr. [NOM ENSEIGNANT]
+            \end{flushright}
+        \end{minipage}
+
+        \vspace{1cm}
+
+        {\large Gitega, \today}
+
+    \end{center}
+\end{titlepage}
+
+% =============== RÉSUMÉ ===============
+\chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
+
+\textbf{Umuhuza} est une plateforme marketplace moderne développée pour faciliter les transactions immobilières et automobiles au Burundi. Le projet vise à éliminer les intermédiaires, réduire les fraudes, et offrir une expérience sécurisée pour les acheteurs et vendeurs.
+
+\vspace{0.5cm}
+
+\textbf{Contexte:} Le marché immobilier et automobile au Burundi souffre d'un manque de transparence, d'une présence importante d'intermédiaires coûteux, et d'une difficulté d'accès à l'information fiable. Les transactions se font principalement via des contacts personnels ou des groupes WhatsApp, ce qui pose des risques de fraude et limite la portée du marché.
+
+\vspace{0.5cm}
+
+\textbf{Objectif:} Créer une plateforme web moderne permettant aux utilisateurs de publier, rechercher et gérer des annonces immobilières et de véhicules de manière sécurisée, avec un système de vérification d'identité, de messagerie intégrée, et de paiement en ligne.
+
+\vspace{0.5cm}
+
+\textbf{Technologies utilisées:}
+\begin{itemize}[noitemsep]
+    \item Backend: Django 5.2.7 + Django REST Framework 3.16.1
+    \item Frontend: React 18 + Vite + TypeScript
+    \item Base de données: PostgreSQL 15+
+    \item Authentification: JWT (djangorestframework-simplejwt)
+    \item Traitement d'images: Pillow + django-imagekit
+    \item Architecture: API REST + SPA (Single Page Application)
+\end{itemize}
+
+\vspace{0.5cm}
+
+\textbf{Résultats obtenus:}
+\begin{itemize}[noitemsep]
+    \item Backend API complet avec 17 modèles de données
+    \item 50+ endpoints REST documentés
+    \item Système d'authentification et de vérification opérationnel
+    \item Gestion complète des annonces avec images multiples
+    \item Système de messagerie en temps réel
+    \item Interface de paiement intégrée
+    \item Système de notation et de favoris
+    \item Panel administrateur complet
+\end{itemize}
+
+\vspace{0.5cm}
+
+\textbf{Mots-clés:} Marketplace, Immobilier, Véhicules, Django, React, PostgreSQL, API REST, JWT, E-commerce, Burundi
+
+\newpage
+
+% =============== TABLE DES MATIÈRES ===============
+\tableofcontents
+\newpage
+
+% =============== LISTE DES FIGURES ===============
+\listoffigures
+\newpage
+
+% =============== LISTE DES TABLEAUX ===============
+\listoftables
+\newpage
+
+% =============== CHAPITRE 1: INTRODUCTION ===============
+\chapter{Introduction}
+
+\section{Contexte du projet}
+
+Le secteur immobilier et automobile au Burundi fait face à plusieurs défis majeurs qui entravent son développement et sa modernisation. Parmi ces défis, on peut citer:
+
+\begin{itemize}
+    \item \textbf{Manque de transparence:} Les informations sur les biens disponibles sont dispersées et difficiles à vérifier. Il n'existe pas de plateforme centralisée pour consulter l'ensemble des offres du marché.
+
+    \item \textbf{Présence d'intermédiaires coûteux:} Les transactions passent souvent par des courtiers qui prélèvent des commissions importantes (parfois jusqu'à 10\% du prix de vente), augmentant artificiellement les coûts.
+
+    \item \textbf{Risques de fraude élevés:} L'absence de vérification d'identité et de mécanismes de confiance expose les acheteurs et vendeurs à des escroqueries fréquentes.
+
+    \item \textbf{Processus inefficaces:} La recherche de biens se fait principalement via le bouche-à-oreille, les groupes WhatsApp, ou des annonces papier, ce qui est chronophage et limite la portée géographique.
+
+    \item \textbf{Absence de digitalisation:} Le secteur reste largement analogique, avec peu d'outils numériques pour faciliter les transactions.
+\end{itemize}
+
+Face à ces constats, nous avons identifié le besoin urgent d'une solution numérique moderne qui permettrait de démocratiser l'accès à l'information immobilière et automobile, tout en offrant des garanties de sécurité et de transparence.
+
+\subsection{Évolution des marketplaces numériques}
+
+À l'échelle internationale, les plateformes marketplace ont révolutionné plusieurs secteurs économiques. Des exemples comme Airbnb (hébergement), Uber (transport), ou Leboncoin (petites annonces) démontrent l'efficacité du modèle de mise en relation directe entre offre et demande. Au Burundi, malgré une pénétration croissante d'Internet (environ 15\% de la population en 2024) et l'adoption massive des smartphones, aucune plateforme locale dédiée à l'immobilier et aux véhicules n'existe véritablement.
+
+\section{Problématique}
+
+La question centrale de notre projet peut être formulée ainsi:
+
+\begin{center}
+    \textit{Comment développer une plateforme numérique sécurisée et accessible qui facilite les transactions immobilières et automobiles au Burundi, tout en éliminant les intermédiaires et en réduisant les risques de fraude?}
+\end{center}
+
+Cette problématique principale se décline en plusieurs sous-questions:
+
+\begin{enumerate}
+    \item Comment garantir l'authenticité des utilisateurs et des annonces publiées?
+    \item Comment faciliter la communication entre acheteurs et vendeurs tout en protégeant leur vie privée?
+    \item Comment intégrer des moyens de paiement locaux (Mobile Money) de manière sécurisée?
+    \item Comment rendre la plateforme accessible même avec une connexion Internet limitée?
+    \item Comment inciter les utilisateurs à adopter cette solution face aux habitudes établies?
+\end{enumerate}
+
+\section{Objectifs du projet}
+
+\subsection{Objectif général}
+
+Concevoir et développer \textbf{Umuhuza}, une plateforme web moderne de marketplace dédiée à la location et à la vente d'immobilier et de véhicules au Burundi, offrant un environnement sécurisé, transparent et efficace pour les transactions.
+
+\subsection{Objectifs spécifiques}
+
+\begin{enumerate}
+    \item \textbf{Développer un backend robuste:}
+    \begin{itemize}
+        \item Créer une API REST complète avec Django et Django REST Framework
+        \item Implémenter un système d'authentification sécurisé basé sur JWT
+        \item Concevoir une architecture de base de données normalisée et performante
+        \item Mettre en place des mécanismes de sécurité (CORS, protection CSRF, rate limiting)
+    \end{itemize}
+
+    \item \textbf{Créer une interface utilisateur intuitive:}
+    \begin{itemize}
+        \item Développer une SPA (Single Page Application) avec React
+        \item Assurer une expérience responsive (mobile-first)
+        \item Implémenter un système de recherche et de filtrage avancé
+        \item Créer des interfaces d'administration complètes
+    \end{itemize}
+
+    \item \textbf{Garantir la sécurité et la confiance:}
+    \begin{itemize}
+        \item Implémenter un système de vérification d'identité par email et téléphone
+        \item Créer un système de notation et d'avis utilisateurs
+        \item Mettre en place un mécanisme de signalement de contenus inappropriés
+        \item Développer un système de badges de confiance
+    \end{itemize}
+
+    \item \textbf{Faciliter les transactions:}
+    \begin{itemize}
+        \item Intégrer un système de messagerie interne sécurisé
+        \item Implémenter des moyens de paiement locaux (Lumicash, EcoCash)
+        \item Créer des plans d'abonnement pour les vendeurs professionnels
+        \item Développer un système de gestion des favoris et des alertes
+    \end{itemize}
+
+    \item \textbf{Assurer la scalabilité et la maintenabilité:}
+    \begin{itemize}
+        \item Documenter l'ensemble du code et des API
+        \item Implémenter des tests unitaires et d'intégration
+        \item Préparer l'architecture pour le passage à l'échelle
+        \item Créer des outils de monitoring et de logging
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Résultats attendus}
+
+À l'issue de ce projet, nous attendons:
+\begin{itemize}
+    \item Une plateforme fonctionnelle accessible via navigateur web
+    \item Un catalogue d'au moins 100 annonces de test
+    \item 50+ utilisateurs beta-testeurs enregistrés
+    \item Un taux de satisfaction utilisateur supérieur à 80\%
+    \item Une documentation technique complète
+    \item Un plan de déploiement en production
+\end{itemize}
+
+% =============== CHAPITRE 2: CAHIER DES CHARGES ===============
+\chapter{Cahier des charges}
+
+\section{Présentation du besoin}
+
+\subsection{Analyse du marché cible}
+
+Le marché burundais de l'immobilier et de l'automobile se caractérise par:
+\begin{itemize}
+    \item Une population urbaine croissante (environ 14\% en 2024)
+    \item Un taux de pénétration mobile de plus de 60\%
+    \item Une classe moyenne émergente avec un pouvoir d'achat en augmentation
+    \item Un besoin croissant de logements dans les villes principales
+    \item Un marché automobile dynamique, dominé par les véhicules d'occasion
+\end{itemize}
+
+\subsection{Acteurs du système}
+
+Le système Umuhuza est conçu pour servir quatre types d'acteurs principaux:
+
+\begin{enumerate}
+    \item \textbf{Visiteurs (non authentifiés):}
+    \begin{itemize}
+        \item Peuvent consulter les annonces publiques
+        \item Peuvent effectuer des recherches et appliquer des filtres
+        \item Doivent créer un compte pour interagir
+    \end{itemize}
+
+    \item \textbf{Acheteurs (utilisateurs authentifiés):}
+    \begin{itemize}
+        \item Peuvent contacter les vendeurs
+        \item Peuvent ajouter des annonces en favoris
+        \item Peuvent noter et commenter les vendeurs
+        \item Peuvent signaler des contenus inappropriés
+    \end{itemize}
+
+    \item \textbf{Vendeurs:}
+    \begin{itemize}
+        \item Peuvent créer et gérer leurs annonces
+        \item Peuvent télécharger des photos
+        \item Peuvent consulter les statistiques de leurs annonces
+        \item Peuvent acheter des plans premium pour plus de visibilité
+    \end{itemize}
+
+    \item \textbf{Dealers (vendeurs professionnels):}
+    \begin{itemize}
+        \item Bénéficient de tous les droits des vendeurs
+        \item Peuvent créer des annonces illimitées
+        \item Ont accès à un dashboard analytique avancé
+        \item Reçoivent un badge vérifié
+        \item Passent par un processus de vérification documentaire
+    \end{itemize}
+
+    \item \textbf{Administrateurs:}
+    \begin{itemize}
+        \item Modèrent les annonces et les utilisateurs
+        \item Gèrent les signalements
+        \item Approuvent les candidatures de dealers
+        \item Consultent les statistiques globales de la plateforme
+        \item Gèrent les catégories et les plans tarifaires
+    \end{itemize}
+\end{enumerate}
+
+\section{Objectifs fonctionnels et non fonctionnels}
+
+\subsection{Objectifs fonctionnels}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{1cm}|p{5cm}|p{7cm}|}
+\hline
+\textbf{ID} & \textbf{Fonctionnalité} & \textbf{Description} \\
+\hline
+F01 & Authentification & Inscription, connexion, déconnexion, vérification email/téléphone, réinitialisation mot de passe \\
+\hline
+F02 & Gestion profil & Modification informations personnelles, changement photo de profil, gestion paramètres \\
+\hline
+F03 & Gestion annonces & Création, modification, suppression, activation/désactivation d'annonces \\
+\hline
+F04 & Upload d'images & Téléchargement multiple d'images, définition image principale, ordre d'affichage \\
+\hline
+F05 & Recherche et filtrage & Recherche par mots-clés, filtres par catégorie/prix/localisation, tri des résultats \\
+\hline
+F06 & Favoris & Ajout/retrait d'annonces en favoris, consultation liste favoris \\
+\hline
+F07 & Messagerie & Envoi/réception messages, historique conversations, notifications nouveaux messages \\
+\hline
+F08 & Notifications & Notifications système (nouveau message, annonce expirée, paiement confirmé) \\
+\hline
+F09 & Paiements & Intégration Mobile Money, achat plans premium, historique paiements \\
+\hline
+F10 & Notations et avis & Noter un vendeur, laisser un commentaire, consulter réputation \\
+\hline
+F11 & Signalements & Signaler une annonce/utilisateur, suivi des signalements \\
+\hline
+F12 & Candidature dealer & Soumission formulaire, upload documents, suivi statut candidature \\
+\hline
+F13 & Administration & Panel admin pour modération, gestion utilisateurs, statistiques \\
+\hline
+\end{tabular}
+\caption{Liste des fonctionnalités principales}
+\end{table}
+
+\subsection{Objectifs non fonctionnels}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{2.5cm}|p{10cm}|}
+\hline
+\textbf{Critère} & \textbf{Exigence} \\
+\hline
+\textbf{Performance} &
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item Temps de chargement page $<$ 3 secondes
+    \item Temps de réponse API $<$ 500ms
+    \item Support de 1000 utilisateurs simultanés
+\end{itemize} \\
+\hline
+\textbf{Sécurité} &
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item Chiffrement HTTPS obligatoire
+    \item Protection contre injections SQL
+    \item Protection contre XSS et CSRF
+    \item Hashage sécurisé des mots de passe (PBKDF2)
+    \item Rate limiting sur endpoints sensibles
+\end{itemize} \\
+\hline
+\textbf{Disponibilité} &
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item Uptime $>$ 99\%
+    \item Système de backup quotidien
+    \item Plan de reprise après incident
+\end{itemize} \\
+\hline
+\textbf{Scalabilité} &
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item Architecture permettant scaling horizontal
+    \item Base de données optimisée avec index
+    \item Possibilité d'ajouter serveurs sans downtime
+\end{itemize} \\
+\hline
+\textbf{Maintenabilité} &
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item Code documenté et commenté
+    \item Tests unitaires (couverture $>$ 70\%)
+    \item Documentation API (format OpenAPI/Swagger)
+    \item Logging détaillé des erreurs
+\end{itemize} \\
+\hline
+\textbf{Compatibilité} &
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item Support navigateurs modernes (Chrome, Firefox, Safari, Edge)
+    \item Responsive design (mobile, tablette, desktop)
+    \item Support smartphones Android 8+ et iOS 12+
+\end{itemize} \\
+\hline
+\textbf{Accessibilité} &
+\begin{itemize}[leftmargin=*,noitemsep]
+    \item Interface multilingue (Français, Anglais, Kirundi)
+    \item Texte lisible et contrasté
+    \item Navigation au clavier possible
+\end{itemize} \\
+\hline
+\end{tabular}
+\caption{Exigences non fonctionnelles}
+\end{table}
+
+\section{Liste des fonctionnalités attendues}
+
+\subsection{Module Authentification et Autorisation}
+\begin{itemize}
+    \item Inscription avec email et numéro de téléphone
+    \item Vérification email par code à 6 chiffres
+    \item Vérification téléphone par SMS OTP
+    \item Connexion avec email/mot de passe
+    \item Authentification JWT (Access Token + Refresh Token)
+    \item Déconnexion et invalidation des tokens
+    \item Réinitialisation mot de passe par email
+    \item Gestion des rôles (Acheteur, Vendeur, Dealer, Admin)
+\end{itemize}
+
+\subsection{Module Gestion des Annonces}
+\begin{itemize}
+    \item Création d'annonce avec formulaire multi-étapes
+    \item Sélection de catégorie (Immobilier: Maisons, Appartements, Terrains / Véhicules: Voitures, Motos)
+    \item Upload de 1 à 10 photos par annonce
+    \item Définition d'une image principale
+    \item Modification d'annonce existante
+    \item Suppression d'annonce (soft delete)
+    \item Activation/désactivation temporaire
+    \item Gestion de l'expiration automatique
+    \item Statistiques par annonce (vues, favoris, contacts)
+    \item Renouvellement d'annonce expirée
+\end{itemize}
+
+\subsection{Module Recherche et Découverte}
+\begin{itemize}
+    \item Recherche full-text dans titre et description
+    \item Filtres par catégorie
+    \item Filtres par fourchette de prix (min/max)
+    \item Filtres par localisation géographique
+    \item Tri par date (plus récent/plus ancien)
+    \item Tri par prix (croissant/décroissant)
+    \item Tri par popularité (nombre de vues)
+    \item Affichage annonces en vignette
+    \item Pagination des résultats
+    \item Annonces recommandées (similaires)
+    \item Annonces featured en priorité
+\end{itemize}
+
+\subsection{Module Messagerie}
+\begin{itemize}
+    \item Création de conversation depuis une annonce
+    \item Envoi de messages texte
+    \item Historique complet des conversations
+    \item Indicateur de messages non lus
+    \item Notification push sur nouveau message
+    \item Marquage conversation comme lue
+    \item Archivage de conversations
+    \item Recherche dans l'historique
+    \item Blocage d'utilisateurs indésirables
+\end{itemize}
+
+\subsection{Module Paiements et Abonnements}
+\begin{itemize}
+    \item Affichage des plans tarifaires disponibles
+    \item Plan Basique gratuit (1 annonce, 30 jours, 3 photos)
+    \item Plan Premium (1 annonce featured, 60 jours, 10 photos, 10 000 BIF)
+    \item Plan Dealer (annonces illimitées, 30 jours, 50 000 BIF)
+    \item Intégration Lumicash pour paiement Mobile Money
+    \item Génération de référence de paiement unique
+    \item Callback de confirmation de paiement
+    \item Historique des paiements
+    \item Facturation et reçus PDF
+    \item Remboursement en cas d'erreur
+\end{itemize}
+
+\subsection{Module Notations et Avis}
+\begin{itemize}
+    \item Noter un vendeur après transaction (1 à 5 étoiles)
+    \item Laisser un commentaire textuel
+    \item Consultation des avis reçus sur profil
+    \item Calcul du score moyen de réputation
+    \item Modération des avis inappropriés
+    \item Réponse du vendeur aux avis
+\end{itemize}
+
+\subsection{Module Signalements et Modération}
+\begin{itemize}
+    \item Signaler une annonce (spam, fraude, inapproprié, duplicata)
+    \item Signaler un utilisateur (harcèlement, comportement suspect)
+    \item Formulaire de signalement avec raison détaillée
+    \item File de modération pour administrateurs
+    \item Actions admin: valider, rejeter, bannir utilisateur, supprimer annonce
+    \item Notifications aux utilisateurs concernés
+    \item Historique des actions de modération
+\end{itemize}
+
+\subsection{Module Administration}
+\begin{itemize}
+    \item Dashboard avec statistiques globales (utilisateurs, annonces, revenus)
+    \item Liste et gestion de tous les utilisateurs
+    \item Modération des nouvelles annonces (approbation requise)
+    \item Traitement des signalements
+    \item Gestion des catégories d'annonces
+    \item Gestion des plans tarifaires
+    \item Consultation des logs d'activité
+    \item Gestion des candidatures de dealers
+    \item Export de données (CSV, Excel)
+    \item Configuration des paramètres système
+\end{itemize}
+
+\subsection{Module Dealer}
+\begin{itemize}
+    \item Formulaire de candidature dealer
+    \item Upload de documents justificatifs (licence commerciale, NIF, pièce d'identité)
+    \item Vérification manuelle par administrateur
+    \item Dashboard dealer avec analytics avancés
+    \item Gestion d'abonnement mensuel
+    \item Badge "Dealer Vérifié" sur profil
+    \item Création d'annonces illimitées
+    \item Outils marketing (boost d'annonces)
+\end{itemize}
+
+\subsection{Module Notifications}
+\begin{itemize}
+    \item Notifications in-app en temps réel
+    \item Notifications par email (configurable)
+    \item Types de notifications:
+    \begin{itemize}
+        \item Nouveau message reçu
+        \item Annonce approuvée/rejetée
+        \item Annonce bientôt expirée
+        \item Paiement confirmé
+        \item Nouvel avis reçu
+        \item Candidature dealer traitée
+    \end{itemize}
+    \item Badge de notification non lue
+    \item Marquage notifications comme lues
+    \item Suppression de notifications
+    \item Paramètres de préférences de notification
+\end{itemize}
+
+% TODO: Continuer avec les chapitres 3, 4, 5, 6, 7...
+% Le document continue dans le prochain fichier...
+
+\end{document}

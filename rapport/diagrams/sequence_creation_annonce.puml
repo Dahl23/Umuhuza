@@ -1,0 +1,54 @@
+@startuml sequence_creation_annonce
+autonumber
+
+actor "Vendeur" as seller
+participant "Frontend" as frontend
+participant "Backend API" as backend
+database "PostgreSQL" as db
+participant "Stockage\nFichiers" as storage
+
+seller -> frontend: Clique "Créer annonce"
+frontend -> backend: GET /api/categories/
+backend -> db: SELECT * FROM CATEGORIES
+db --> backend: Liste catégories
+backend --> frontend: 200 OK {categories}
+
+seller -> frontend: Remplit formulaire\n+ sélectionne photos
+frontend -> backend: POST /api/listings/create/\n{title, description, price, images}
+
+backend -> backend: Vérifie authentification JWT
+backend -> db: Vérifie abonnement actif
+
+alt Abonnement actif avec quota
+    backend -> db: Vérifie quota disponible
+    db --> backend: Quota OK
+
+    backend -> db: INSERT INTO LISTINGS\n(status='pending')
+    db --> backend: listing_id = 123
+
+    ' ACTIVATION AUTOMATIQUE
+    backend -> db: UPDATE LISTINGS\nSET status='active',\nexpiration_date=NOW()+duration
+    db --> backend: OK
+
+    backend -> db: UPDATE subscriptions\nSET listings_used += 1
+    db --> backend: OK
+
+    loop Pour chaque photo (max selon plan)
+        backend -> storage: Upload photo optimisée
+        storage --> backend: image_url
+        backend -> db: INSERT INTO LISTING_IMAGES
+        db --> backend: OK
+    end
+
+    backend -> db: UPDATE users\nSET is_seller=True
+    db --> backend: OK
+
+    backend --> frontend: 201 Created\n{listing, status='active'}
+    frontend --> seller: ✓ Annonce créée et activée!
+
+else Pas de quota ou abonnement expiré
+    backend --> frontend: 403 Forbidden\n"Quota dépassé"
+    frontend --> seller: ⚠ Veuillez souscrire un plan
+end
+
+@enduml

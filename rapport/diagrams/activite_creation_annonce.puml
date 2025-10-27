@@ -1,0 +1,75 @@
+@startuml activite_creation_annonce
+start
+
+:Vendeur se connecte;
+
+if (Email vérifié?) then (non)
+    :Affiche "Vérifiez votre email";
+    stop
+else (oui)
+endif
+
+:Clique "Créer une annonce";
+
+:Système vérifie abonnement actif;
+
+if (Abonnement actif?) then (oui)
+    :Système vérifie quota disponible;
+
+    if (Quota disponible?) then (oui)
+        :Affiche formulaire création;
+
+        partition "Saisie informations" {
+            :Sélectionne catégorie;
+            :Entre titre, description;
+            :Entre prix, localisation;
+            :Ajoute photos (max selon plan);
+        }
+
+        :Prévisualise l'annonce;
+
+        if (Vendeur confirme?) then (oui)
+            :Soumet l'annonce;
+
+            fork
+                :Crée LISTING (status='pending');
+            fork again
+                :Upload photos optimisées vers S3;
+            fork again
+                :Crée LISTING_IMAGES;
+            end fork
+
+            ' ACTIVATION AUTOMATIQUE
+            :==ACTIVATION AUTOMATIQUE==
+            UPDATE status='active'
+            SET expiration_date=NOW()+duration;
+
+            :Incrémente subscription.listings_used;
+
+            if (Première annonce?) then (oui)
+                :Met à jour is_seller=True;
+            endif
+
+            :Log activité "LISTING_CREATED";
+
+            :Affiche "Annonce créée et activée!";
+            stop
+
+        else (non)
+            :Retour au formulaire;
+            stop
+        endif
+
+    else (non - quota dépassé)
+        :Affiche "Quota dépassé";
+        :Propose plans premium;
+        stop
+    endif
+
+else (non - pas d'abonnement)
+    :Affiche "Aucun abonnement actif";
+    :Redirige vers plans tarifaires;
+    stop
+endif
+
+@enduml
